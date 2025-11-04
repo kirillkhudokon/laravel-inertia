@@ -7,7 +7,7 @@ export default function Show({ post }) {
             <div className="content container-small">
                 <div className="mb-4">
                     <Link href="/">
-                        ← Назад к постам
+                        Назад к постам
                     </Link>
                 </div>
 

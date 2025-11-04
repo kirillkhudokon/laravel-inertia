@@ -5,7 +5,7 @@ export default function DefaultLayout({ children }){
 	return <>
 		<div className="section-header">
 			<div className="container">
-				<h2 className="mb-0">Laravel Inertia Blog</h2>
+				<h2 className="mb-0">Blog</h2>
 			</div>
 		</div>
 		<div className="section-nav">
@@ -23,7 +23,7 @@ export default function DefaultLayout({ children }){
 		</div>
 		<div className="section-footer">
 			<div className="container text-center">
-				<p className="mb-0 text-muted">© 2025 Laravel Inertia Blog</p>
+				<p className="mb-0 text-muted">footer</p>
 			</div>
 		</div>
 	</>

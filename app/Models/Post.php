@@ -19,9 +19,6 @@ class Post extends Model
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Указываем Laravel искать посты по полю 'url' вместо 'id'
-     */
     public function getRouteKeyName()
     {
         return 'url';
