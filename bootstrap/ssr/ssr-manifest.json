@@ -1,6 +1,16 @@
 {
+  "resources/css/app.css": [],
+  "resources/css/components.css": [],
+  "resources/js-react/Components/Alert.jsx": [],
+  "resources/js-react/Components/Button.jsx": [],
+  "resources/js-react/Components/Card.jsx": [],
+  "resources/js-react/Components/Input.jsx": [],
+  "resources/js-react/Components/Link.jsx": [],
+  "resources/js-react/Components/TextArea.jsx": [],
   "resources/js-react/Layouts/DefaultLayout.jsx": [],
-  "resources/js-react/Pages/Home.jsx": [],
-  "resources/js-react/Pages/Other.jsx": [],
+  "resources/js-react/Pages/Posts/Create.jsx": [],
+  "resources/js-react/Pages/Posts/Edit.jsx": [],
+  "resources/js-react/Pages/Posts/Index.jsx": [],
+  "resources/js-react/Pages/Posts/Show.jsx": [],
   "resources/js-react/ssr.jsx": []
 }
