@@ -1,22 +1,30 @@
-import { Link } from '@inertiajs/react';
+import { Link } from '../Components';
+import '../../css/app.css';
 
 export default function DefaultLayout({ children }){
 	return <>
-		<div>
-			header
-			<hr/>
+		<div className="section-header">
+			<div className="container">
+				<h2 className="mb-0">Blog</h2>
+			</div>
 		</div>
-		<div>
-			<Link href="/">Home</Link> | 
-			<Link href="/other">Other</Link>
-			<hr/>
+		<div className="section-nav">
+			<div className="container">
+				<Link href="/" variant="button">
+					Главная
+				</Link>
+				<Link href="/posts/create" variant="button">
+					Создать пост
+				</Link>
+			</div>
 		</div>
-		<div>
+		<div className="min-height-screen">
 			{ children }
 		</div>
-		<div>
-			<hr/>
-			footer
+		<div className="section-footer">
+			<div className="container text-center">
+				<p className="mb-0 text-muted">footer</p>
+			</div>
 		</div>
 	</>
 }
