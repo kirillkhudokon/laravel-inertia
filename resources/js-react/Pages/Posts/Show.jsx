@@ -1,7 +1,9 @@
 import DefaultLayout from '../../Layouts/DefaultLayout';
 import { Button, Link } from '../../Components';
+import { usePage } from '@inertiajs/react';
 
 export default function Show({ post }) {
+    const { auth } = usePage().props;
     return (
         <DefaultLayout>
             <div className="content container-small">
@@ -45,23 +47,25 @@ export default function Show({ post }) {
                         ))}
                     </div>
 
-                    <div className="article-actions">
-                        <Link href={`/posts/${post.url}/edit`}>
-                            <Button variant="success">
-                                Редактировать
-                            </Button>
-                        </Link>
-                        
-                        <Link 
-                            href={`/posts/${post.url}`}
-                            method="delete"
-                            as="button"
-                            onBefore={() => confirm('Вы уверены, что хотите удалить этот пост?')}
-                            className="btn-danger"
-                        >
-                            Удалить
-                        </Link>
-                    </div>
+                    {auth.user && auth.user.id === post.user_id && (
+                        <div className="article-actions">
+                            <Link href={`/posts/${post.url}/edit`}>
+                                  <Button variant="success" size="small">
+                                    Редактировать
+                                </Button>
+                            </Link>
+                            
+                            <Link 
+                                href={`/posts/${post.url}`}
+                                method="delete"
+                                as="button"
+                                onBefore={() => confirm('Вы уверены, что хотите удалить этот пост?')}
+                                className="btn-danger btn-small"
+                            >
+                                Удалить
+                            </Link>
+                        </div>
+                    )}
                 </article>
             </div>
         </DefaultLayout>

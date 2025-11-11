@@ -34,14 +34,12 @@
 
 .btn-danger {
     background-color: #dc3545;
-    color: white;
-    padding: 5px 10px;
-    font-size: 14px;
     border: none;
     border-radius: 5px;
     color: white!important;
     cursor: pointer;
     text-decoration: none!important;
+    height: fit-content;
 }
 
 .btn-danger:hover:not(:disabled) {
@@ -78,17 +76,15 @@
 }
 
 .link-button {
-    color: #007bff;
+    color: #ffffff;
+    background-color: #007bff;
     text-decoration: none;
     padding: 10px 20px;
     border-radius: 5px;
     display: inline-block;
-    transition: background-color 0.2s ease;
-}
-
-.link-button:hover {
-    background-color: #f8f9fa;
-    text-decoration: none;
+    outline: none;
+    cursor: pointer;
+    border: none;
 }
 
 

@@ -8,9 +8,14 @@
   "resources/js-react/Components/Link.jsx": [],
   "resources/js-react/Components/TextArea.jsx": [],
   "resources/js-react/Layouts/DefaultLayout.jsx": [],
+  "resources/js-react/Pages/Auth/Login.jsx": [],
+  "resources/js-react/Pages/Auth/Register.jsx": [],
+  "resources/js-react/Pages/Errors/Forbidden.jsx": [],
+  "resources/js-react/Pages/Errors/NotFound.jsx": [],
   "resources/js-react/Pages/Posts/Create.jsx": [],
   "resources/js-react/Pages/Posts/Edit.jsx": [],
   "resources/js-react/Pages/Posts/Index.jsx": [],
+  "resources/js-react/Pages/Posts/MyPosts.jsx": [],
   "resources/js-react/Pages/Posts/Show.jsx": [],
   "resources/js-react/ssr.jsx": []
 }

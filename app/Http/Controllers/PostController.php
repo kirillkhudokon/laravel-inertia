@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 
 class PostController extends Controller
 {
@@ -18,6 +18,21 @@ class PostController extends Controller
         $posts = Post::with('user')->latest()->get();
         
         return Inertia::render('Posts/Index', [
+            'posts' => $posts
+        ]);
+    }
+
+    /**
+     * Display posts for authenticated user.
+     */
+    public function myPosts()
+    {
+        $posts = Post::where('user_id', Auth::id())
+            ->with('user')
+            ->latest()
+            ->get();
+        
+        return Inertia::render('Posts/MyPosts', [
             'posts' => $posts
         ]);
     }
@@ -42,20 +57,11 @@ class PostController extends Controller
 
         $url = Str::slug($validated['title']);
 
-        $user = User::first();
-        if (!$user) {
-            $user = User::create([
-                'name' => 'Test User',
-                'email' => 'test@example.com',
-                'password' => bcrypt('password'),
-            ]);
-        }
-
         $post = Post::create([
             'title' => $validated['title'],
             'content' => $validated['content'],
             'url' => $url,
-            'user_id' => $user->id,
+            'user_id' => Auth::id(),
         ]);
 
         $post->update(['url' => $url . '-' . $post->id]);
@@ -81,6 +87,10 @@ class PostController extends Controller
      */
     public function edit(Post $post)
     {
+        if ($post->user_id !== Auth::id()) {
+            return Inertia::render('Errors/Forbidden');
+        }
+        
         return Inertia::render('Posts/Edit', [
             'post' => $post
         ]);
@@ -91,6 +101,10 @@ class PostController extends Controller
      */
     public function update(Request $request, Post $post)
     {
+        if ($post->user_id !== Auth::id()) {
+            return Inertia::render('Errors/Forbidden');
+        }
+        
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
@@ -112,9 +126,13 @@ class PostController extends Controller
      */
     public function destroy(Post $post)
     {
+        if ($post->user_id !== Auth::id()) {
+            return Inertia::render('Errors/Forbidden');
+        }
+        
         $post->delete();
 
-        return redirect()->route('home')
+        return redirect()->route('posts.my')
             ->with('success', 'Пост успешно удален!');
     }
 }

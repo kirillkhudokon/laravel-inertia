@@ -3,7 +3,7 @@ import DefaultLayout from '../../Layouts/DefaultLayout';
 import { Button, Link, Alert, Card } from '../../Components';
 
 export default function Index({ posts }) {
-    const { flash } = usePage().props;
+    const { flash, auth } = usePage().props;
 
     return (
         <DefaultLayout>
@@ -46,22 +46,24 @@ export default function Index({ posts }) {
                                             Создано: {new Date(post.created_at).toLocaleDateString('ru-RU')}
                                         </div>
                                     </div>
-                                    <div className="post-actions">
-                                        <Link href={`/posts/${post.url}/edit`}>
-                                            <Button variant="success" size="small">
-                                                Изменить
-                                            </Button>
-                                        </Link>
-                                        <Link 
-                                            href={`/posts/${post.url}`}
-                                            method="delete"
-                                            as="button"
-                                            onBefore={() => confirm('Вы уверены, что хотите удалить этот пост?')}
-                                            className="btn-danger"
-                                        >
-                                            Удалить
-                                        </Link>
-                                    </div>
+                                    {auth.user && auth.user.id === post.user_id && (
+                                        <div className="post-actions">
+                                            <Link href={`/posts/${post.url}/edit`}>
+                                                <Button variant="success" size="small">
+                                                    Изменить
+                                                </Button>
+                                            </Link>
+                                            <Link 
+                                                href={`/posts/${post.url}`}
+                                                method="delete"
+                                                as="button"
+                                                onBefore={() => confirm('Вы уверены, что хотите удалить этот пост?')}
+                                                className="btn-danger btn-small"
+                                            >
+                                                Удалить
+                                            </Link>
+                                        </div>
+                                    )}
                                 </div>
                             </Card>
                         ))}
