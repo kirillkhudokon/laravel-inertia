@@ -1,16 +1,17 @@
 import { useForm } from '@inertiajs/react';
 import DefaultLayout from '../../Layouts/DefaultLayout';
 import { Button, Link, Input, TextArea } from '../../Components';
+import { FormEventHandler } from 'react';
 
-export default function Edit({ post }) {
-    const { data, setData, put, processing, errors } = useForm({
-        title: post.title,
-        content: post.content,
+export default function Create() {
+    const { data, setData, post, processing, errors } = useForm({
+        title: '',
+        content: '',
     });
 
-    const handleSubmit = (e) => {
+    const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
         e.preventDefault();
-        put(`/posts/${post.url}`);
+        post('/posts');
     };
 
     return (
@@ -18,11 +19,11 @@ export default function Edit({ post }) {
             <div className="content container-small">
                 <div className="mb-4">
                     <Link href="/">
-                        Назад к постам
+                       Назад к постам
                     </Link>
                 </div>
 
-                <h1>Редактировать пост</h1>
+                <h1>Создать новый пост</h1>
 
                 <form onSubmit={handleSubmit} className="mt-4">
                     <Input
@@ -49,13 +50,13 @@ export default function Edit({ post }) {
                     <div className="form-actions">
                         <Button
                             type="submit"
-                            variant="success"
+                            variant="primary"
                             disabled={processing}
                         >
-                            {processing ? 'Сохранение...' : 'Сохранить изменения'}
+                            {processing ? 'Создание...' : 'Создать пост'}
                         </Button>
                         
-                        <Link href={`/posts/${post.url}`}>
+                        <Link href="/">
                             <Button variant="secondary">
                                 Отмена
                             </Button>

@@ -1,7 +1,14 @@
+import { FC, TextareaHTMLAttributes } from 'react';
 import classNames from 'classnames';
 import '../../css/components.css';
 
-export default function TextArea({ 
+interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement>{
+    label?: string;
+    error?: string;
+    required?: boolean;
+}
+
+const TextArea: FC<TextAreaProps> = ({ 
     id,
     label,
     value,
@@ -12,7 +19,7 @@ export default function TextArea({
     required = false,
     className,
     ...props 
-}) {
+}) => {
     const textareaClasses = classNames(
         'textarea',
         {
@@ -45,4 +52,6 @@ export default function TextArea({
             )}
         </div>
     );
-}
+};
+
+export default TextArea;

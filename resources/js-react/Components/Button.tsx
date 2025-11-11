@@ -1,7 +1,16 @@
+import { FC, PropsWithChildren } from 'react';
 import classNames from 'classnames';
 import '../../css/components.css';
 
-export default function Button({ 
+interface ButtonProps {
+    variant?: 'primary' | 'secondary' | 'danger' | 'link' | 'success';
+    size?: 'small' | 'normal' | 'large' | 'sm' | 'md';
+    disabled?: boolean;
+    type?: 'button' | 'submit' | 'reset';
+    onClick?: () => void;
+    className?: string;
+}
+const Button: FC<PropsWithChildren<ButtonProps>> = ({ 
     children, 
     variant = 'primary', 
     size = 'normal',
@@ -10,7 +19,7 @@ export default function Button({
     onClick,
     className,
     ...props 
-}) {
+}) => {
     const classes = classNames(
         'btn',
         `btn-${variant}`,
@@ -32,3 +41,5 @@ export default function Button({
         </button>
     );
 }
+
+export default Button

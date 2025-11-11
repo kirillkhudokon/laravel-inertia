@@ -1,9 +1,15 @@
 import { usePage } from '@inertiajs/react';
 import DefaultLayout from '../../Layouts/DefaultLayout';
 import { Button, Link, Alert, Card } from '../../Components';
+import { FC, PropsWithChildren } from 'react';
+import { PageProps, Post } from '@/types';
 
-export default function Index({ posts }) {
-    const { flash, auth } = usePage().props;
+interface IndexProps {
+    posts: Post[]
+}
+
+const Index: FC<PropsWithChildren<IndexProps>> = ({ posts }) => {
+    const { flash, auth } = usePage<PageProps>().props;
 
     return (
         <DefaultLayout>
@@ -73,3 +79,5 @@ export default function Index({ posts }) {
         </DefaultLayout>
     );
 }
+
+export default Index;

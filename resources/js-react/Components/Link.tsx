@@ -1,17 +1,23 @@
-import { Link as InertiaLink } from '@inertiajs/react';
+import { FC } from 'react';
+import { Link as InertiaLink, InertiaLinkProps } from '@inertiajs/react';
 import classNames from 'classnames';
 import '../../css/components.css';
 
-export default function Link({ 
+interface LinkProps extends InertiaLinkProps {
+    variant?: 'default' | 'button';
+    className?: string;
+}
+
+const Link: FC<LinkProps> = ({ 
     children, 
     href, 
     variant = 'default',
-    as = 'a',
     method = 'get',
+    as = 'a',
     onBefore,
     className,
     ...props 
-}) {
+}) => {
     const classes = classNames(
         {
             'link': variant === 'default',
@@ -44,4 +50,6 @@ export default function Link({
             {children}
         </InertiaLink>
     );
-}
+};
+
+export default Link;

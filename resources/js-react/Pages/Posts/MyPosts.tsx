@@ -1,11 +1,18 @@
 import DefaultLayout from '../../Layouts/DefaultLayout';
 import { Link, Button } from '../../Components';
 import { useForm } from '@inertiajs/react';
+import { FC, PropsWithChildren } from 'react';
+import { Post } from '@/types';
 
-export default function MyPosts({ posts }) {
+
+interface MyPostsProps {
+    posts: Post[]
+}
+
+const MyPosts: FC<PropsWithChildren<MyPostsProps>> = ({ posts }) => {
     const { delete: destroy } = useForm();
 
-    const handleDelete = (post) => {
+    const handleDelete = (post: Post) => {
         if (confirm('Вы уверены, что хотите удалить этот пост?')) {
             destroy(`/posts/${post.url}`);
         }
@@ -50,14 +57,12 @@ export default function MyPosts({ posts }) {
                                                 <Link 
                                                     href={`/posts/${post.url}`} 
                                                     variant="button" 
-                                                    size="sm"
                                                 >
                                                     Читать
                                                 </Link>
                                                 <Link 
                                                     href={`/posts/${post.url}/edit`} 
                                                     variant="button" 
-                                                    size="sm"
                                                 >
                                                     Редактировать
                                                 </Link>
@@ -80,3 +85,5 @@ export default function MyPosts({ posts }) {
         </DefaultLayout>
     );
 }
+
+export default MyPosts;

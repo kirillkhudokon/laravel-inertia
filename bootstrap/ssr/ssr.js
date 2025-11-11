@@ -3,7 +3,7 @@ import { Link as Link$1, usePage, useForm, createInertiaApp } from "@inertiajs/r
 import classNames from "classnames";
 import createServer from "@inertiajs/react/server";
 import { renderToString } from "react-dom/server";
-function Button({
+const Button = ({
   children,
   variant = "primary",
   size = "normal",
@@ -12,7 +12,7 @@ function Button({
   onClick,
   className,
   ...props
-}) {
+}) => {
   const classes = classNames(
     "btn",
     `btn-${variant}`,
@@ -32,17 +32,17 @@ function Button({
       children
     }
   );
-}
-function Link({
+};
+const Link = ({
   children,
   href,
   variant = "default",
-  as = "a",
   method = "get",
+  as = "a",
   onBefore,
   className,
   ...props
-}) {
+}) => {
   const classes = classNames(
     {
       "link": variant === "default",
@@ -73,8 +73,8 @@ function Link({
       children
     }
   );
-}
-function Input({
+};
+const Input = ({
   id,
   label,
   value,
@@ -85,7 +85,7 @@ function Input({
   required = false,
   className,
   ...props
-}) {
+}) => {
   const inputClasses = classNames(
     "input",
     {
@@ -112,8 +112,8 @@ function Input({
     ),
     error && /* @__PURE__ */ jsx("div", { className: "error-message", children: error })
   ] });
-}
-function TextArea({
+};
+const TextArea = ({
   id,
   label,
   value,
@@ -124,7 +124,7 @@ function TextArea({
   required = false,
   className,
   ...props
-}) {
+}) => {
   const textareaClasses = classNames(
     "textarea",
     {
@@ -151,22 +151,22 @@ function TextArea({
     ),
     error && /* @__PURE__ */ jsx("div", { className: "error-message", children: error })
   ] });
-}
-function Alert({ children, type = "success", className }) {
+};
+const Alert = ({ children, type = "success", className }) => {
   const alertClasses = classNames(
     "alert",
     `alert-${type}`,
     className
   );
   return /* @__PURE__ */ jsx("div", { className: alertClasses, children });
-}
-function Card({
+};
+const Card = ({
   children,
   variant = "default",
   padding = "normal",
   className,
   ...props
-}) {
+}) => {
   const cardClasses = classNames(
     "post-card",
     {
@@ -177,8 +177,8 @@ function Card({
     className
   );
   return /* @__PURE__ */ jsx("div", { className: cardClasses, ...props, children });
-}
-function DefaultLayout({ children }) {
+};
+const DefaultLayout = ({ children }) => {
   const { auth } = usePage().props;
   return /* @__PURE__ */ jsxs("div", { className: "app-layout", children: [
     /* @__PURE__ */ jsx("div", { className: "topbar", children: /* @__PURE__ */ jsxs("div", { className: "d-flex justify-content-between align-items-center pl-5 pr-5", children: [
@@ -189,10 +189,10 @@ function DefaultLayout({ children }) {
           auth.user.name,
           "!"
         ] }),
-        /* @__PURE__ */ jsx(Link, { href: "/logout", method: "post", variant: "button", size: "sm", children: "Выйти" })
+        /* @__PURE__ */ jsx(Link, { href: "/logout", method: "post", variant: "button", children: "Выйти" })
       ] }) : /* @__PURE__ */ jsxs("div", { className: "d-flex gap-2", children: [
-        /* @__PURE__ */ jsx(Link, { href: "/login", variant: "button", size: "sm", children: "Войти" }),
-        /* @__PURE__ */ jsx(Link, { href: "/register", variant: "button", size: "sm", children: "Регистрация" })
+        /* @__PURE__ */ jsx(Link, { href: "/login", variant: "button", children: "Войти" }),
+        /* @__PURE__ */ jsx(Link, { href: "/register", variant: "button", children: "Регистрация" })
       ] })
     ] }) }),
     /* @__PURE__ */ jsxs("div", { className: "app-content", children: [
@@ -207,7 +207,7 @@ function DefaultLayout({ children }) {
     ] }),
     /* @__PURE__ */ jsx("div", { className: "footer", children: /* @__PURE__ */ jsx("div", { className: "container text-center", children: /* @__PURE__ */ jsx("p", { className: "mb-0 text-muted", children: "© 2025 Blog" }) }) })
   ] });
-}
+};
 function Login() {
   const { data, setData, post, processing, errors } = useForm({
     email: "",
@@ -409,7 +409,7 @@ const __vite_glob_0_4 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.def
   __proto__: null,
   default: Create
 }, Symbol.toStringTag, { value: "Module" }));
-function Edit({ post }) {
+const Edit = ({ post }) => {
   const { data, setData, put, processing, errors } = useForm({
     title: post.title,
     content: post.content
@@ -461,12 +461,12 @@ function Edit({ post }) {
       ] })
     ] })
   ] }) });
-}
+};
 const __vite_glob_0_5 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   default: Edit
 }, Symbol.toStringTag, { value: "Module" }));
-function Index({ posts }) {
+const Index = ({ posts }) => {
   const { flash, auth } = usePage().props;
   return /* @__PURE__ */ jsx(DefaultLayout, { children: /* @__PURE__ */ jsxs("div", { className: "content container", children: [
     /* @__PURE__ */ jsxs("div", { className: "flex-between mb-4", children: [
@@ -504,12 +504,12 @@ function Index({ posts }) {
       ] })
     ] }) }, post.id)) })
   ] }) });
-}
+};
 const __vite_glob_0_6 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   default: Index
 }, Symbol.toStringTag, { value: "Module" }));
-function MyPosts({ posts }) {
+const MyPosts = ({ posts }) => {
   const { delete: destroy } = useForm();
   const handleDelete = (post) => {
     if (confirm("Вы уверены, что хотите удалить этот пост?")) {
@@ -540,7 +540,6 @@ function MyPosts({ posts }) {
           {
             href: `/posts/${post.url}`,
             variant: "button",
-            size: "sm",
             children: "Читать"
           }
         ),
@@ -549,7 +548,6 @@ function MyPosts({ posts }) {
           {
             href: `/posts/${post.url}/edit`,
             variant: "button",
-            size: "sm",
             children: "Редактировать"
           }
         ),
@@ -565,12 +563,12 @@ function MyPosts({ posts }) {
       ] }) })
     ] }) }, post.id)) })
   ] }) }) });
-}
+};
 const __vite_glob_0_7 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   default: MyPosts
 }, Symbol.toStringTag, { value: "Module" }));
-function Show({ post }) {
+const Show = ({ post }) => {
   const { auth } = usePage().props;
   return /* @__PURE__ */ jsx(DefaultLayout, { children: /* @__PURE__ */ jsxs("div", { className: "content container-small", children: [
     /* @__PURE__ */ jsx("div", { className: "mb-4", children: /* @__PURE__ */ jsx(Link, { href: "/", children: "Назад к постам" }) }),
@@ -617,7 +615,7 @@ function Show({ post }) {
       ] })
     ] })
   ] }) });
-}
+};
 const __vite_glob_0_8 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   default: Show
@@ -627,8 +625,8 @@ createServer(
     page,
     render: renderToString,
     resolve: (name) => {
-      const pages = /* @__PURE__ */ Object.assign({ "./Pages/Auth/Login.jsx": __vite_glob_0_0, "./Pages/Auth/Register.jsx": __vite_glob_0_1, "./Pages/Errors/Forbidden.jsx": __vite_glob_0_2, "./Pages/Errors/NotFound.jsx": __vite_glob_0_3, "./Pages/Posts/Create.jsx": __vite_glob_0_4, "./Pages/Posts/Edit.jsx": __vite_glob_0_5, "./Pages/Posts/Index.jsx": __vite_glob_0_6, "./Pages/Posts/MyPosts.jsx": __vite_glob_0_7, "./Pages/Posts/Show.jsx": __vite_glob_0_8 });
-      return pages[`./Pages/${name}.jsx`];
+      const pages = /* @__PURE__ */ Object.assign({ "./Pages/Auth/Login.tsx": __vite_glob_0_0, "./Pages/Auth/Register.tsx": __vite_glob_0_1, "./Pages/Errors/Forbidden.tsx": __vite_glob_0_2, "./Pages/Errors/NotFound.tsx": __vite_glob_0_3, "./Pages/Posts/Create.tsx": __vite_glob_0_4, "./Pages/Posts/Edit.tsx": __vite_glob_0_5, "./Pages/Posts/Index.tsx": __vite_glob_0_6, "./Pages/Posts/MyPosts.tsx": __vite_glob_0_7, "./Pages/Posts/Show.tsx": __vite_glob_0_8 });
+      return pages[`./Pages/${name}.tsx`];
     },
     setup({ App, props }) {
       return /* @__PURE__ */ jsx(App, { ...props });

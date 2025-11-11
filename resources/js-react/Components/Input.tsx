@@ -1,7 +1,14 @@
+import { FC, InputHTMLAttributes } from 'react';
 import classNames from 'classnames';
 import '../../css/components.css';
 
-export default function Input({ 
+interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+    label?: string;
+    error?: string;
+    required?: boolean;
+}
+
+const Input: FC<InputProps> = ({ 
     id,
     label,
     value,
@@ -12,7 +19,7 @@ export default function Input({
     required = false,
     className,
     ...props 
-}) {
+}) => {
     const inputClasses = classNames(
         'input',
         {
@@ -45,4 +52,6 @@ export default function Input({
             )}
         </div>
     );
-}
+};
+
+export default Input;

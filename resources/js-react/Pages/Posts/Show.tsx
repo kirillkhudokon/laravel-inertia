@@ -1,9 +1,15 @@
 import DefaultLayout from '../../Layouts/DefaultLayout';
 import { Button, Link } from '../../Components';
 import { usePage } from '@inertiajs/react';
+import { PageProps, Post } from '@/types';
+import { FC, PropsWithChildren } from 'react';
 
-export default function Show({ post }) {
-    const { auth } = usePage().props;
+interface ShowProps {
+    post: Post
+}
+
+const Show: FC<PropsWithChildren<ShowProps>> = ({ post }) => {
+    const { auth } = usePage<PageProps>().props;
     return (
         <DefaultLayout>
             <div className="content container-small">
@@ -71,3 +77,5 @@ export default function Show({ post }) {
         </DefaultLayout>
     );
 }
+
+export default Show;

@@ -1,16 +1,22 @@
 import { useForm } from '@inertiajs/react';
 import DefaultLayout from '../../Layouts/DefaultLayout';
 import { Button, Link, Input, TextArea } from '../../Components';
+import { FC, FormEventHandler, PropsWithChildren } from 'react';
+import { Post } from '@/types';
 
-export default function Create() {
-    const { data, setData, post, processing, errors } = useForm({
-        title: '',
-        content: '',
+interface EditProps {
+    post: Post 
+}
+
+const Edit: FC<PropsWithChildren<EditProps>> = ({ post }) => {
+    const { data, setData, put, processing, errors } = useForm({
+        title: post.title,
+        content: post.content,
     });
 
-    const handleSubmit = (e) => {
+    const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
         e.preventDefault();
-        post('/posts');
+        put(`/posts/${post.url}`);
     };
 
     return (
@@ -18,11 +24,11 @@ export default function Create() {
             <div className="content container-small">
                 <div className="mb-4">
                     <Link href="/">
-                       Назад к постам
+                        Назад к постам
                     </Link>
                 </div>
 
-                <h1>Создать новый пост</h1>
+                <h1>Редактировать пост</h1>
 
                 <form onSubmit={handleSubmit} className="mt-4">
                     <Input
@@ -49,13 +55,13 @@ export default function Create() {
                     <div className="form-actions">
                         <Button
                             type="submit"
-                            variant="primary"
+                            variant="success"
                             disabled={processing}
                         >
-                            {processing ? 'Создание...' : 'Создать пост'}
+                            {processing ? 'Сохранение...' : 'Сохранить изменения'}
                         </Button>
                         
-                        <Link href="/">
+                        <Link href={`/posts/${post.url}`}>
                             <Button variant="secondary">
                                 Отмена
                             </Button>
@@ -66,3 +72,5 @@ export default function Create() {
         </DefaultLayout>
     );
 }
+
+export default Edit

@@ -1,9 +1,11 @@
+import { FC, PropsWithChildren } from 'react';
 import { Link } from '../Components';
 import { usePage } from '@inertiajs/react';
+import type { PageProps } from '../types';
 import '../../css/app.css';
 
-export default function DefaultLayout({ children }) {
-    const { auth } = usePage().props;
+const DefaultLayout: FC<PropsWithChildren> = ({ children }) => {
+    const { auth } = usePage<PageProps>().props;
 
     return (
         <div className="app-layout">
@@ -13,16 +15,16 @@ export default function DefaultLayout({ children }) {
                     {auth.user ? (
                         <div className="d-flex align-items-center gap-3">
                             <span className="text-white">Привет, {auth.user.name}!</span>
-                            <Link href="/logout" method="post" variant="button" size="sm">
+                            <Link href="/logout" method="post" variant="button">
                                 Выйти
                             </Link>
                         </div>
                     ) : (
                         <div className="d-flex gap-2">
-                            <Link href="/login" variant="button" size="sm">
+                            <Link href="/login" variant="button">
                                 Войти
                             </Link>
-                            <Link href="/register" variant="button" size="sm">
+                            <Link href="/register" variant="button">
                                 Регистрация
                             </Link>
                         </div>
@@ -63,3 +65,4 @@ export default function DefaultLayout({ children }) {
         </div>
     );
 }
+export default DefaultLayout;

@@ -1,6 +1,7 @@
 import { useForm } from '@inertiajs/react';
 import DefaultLayout from '../../Layouts/DefaultLayout';
 import { Input, Button, Card, Alert } from '../../Components';
+import { FormEventHandler } from 'react';
 
 export default function Login() {
     const { data, setData, post, processing, errors } = useForm({
@@ -8,7 +9,7 @@ export default function Login() {
         password: '',
     });
 
-    const submit = (e) => {
+    const submit: FormEventHandler<HTMLFormElement> = (e) => {
         e.preventDefault();
         post('/login');
     };

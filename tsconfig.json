@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["resources/js-react/*"]
+    },
+
+    "typeRoots": ["./node_modules/@types", "./resources/js-react/types"]
+  },
+  "include": [
+    "resources/js-react/**/*.ts",
+    "resources/js-react/**/*.tsx",
+    "resources/js-react/**/*.js",
+    "resources/js-react/**/*.jsx",
+    "resources/js-react/types/**/*"
+  ],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}
