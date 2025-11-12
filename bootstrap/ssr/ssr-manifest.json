@@ -6,6 +6,7 @@
   "resources/js-react/Components/Card.tsx": [],
   "resources/js-react/Components/Input.tsx": [],
   "resources/js-react/Components/Link.tsx": [],
+  "resources/js-react/Components/TagInput.tsx": [],
   "resources/js-react/Components/TextArea.tsx": [],
   "resources/js-react/Layouts/DefaultLayout.tsx": [],
   "resources/js-react/Pages/Auth/Login.tsx": [],

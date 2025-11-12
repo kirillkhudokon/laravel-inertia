@@ -1,6 +1,7 @@
 import { jsx, jsxs, Fragment } from "react/jsx-runtime";
-import { Link as Link$1, usePage, useForm, createInertiaApp } from "@inertiajs/react";
+import { Link as Link$1, usePage, router, useForm, createInertiaApp } from "@inertiajs/react";
 import classNames from "classnames";
+import { useState, useRef, useEffect } from "react";
 import createServer from "@inertiajs/react/server";
 import { renderToString } from "react-dom/server";
 const Button = ({
@@ -177,6 +178,131 @@ const Card = ({
     className
   );
   return /* @__PURE__ */ jsx("div", { className: cardClasses, ...props, children });
+};
+const TagInput = ({
+  tags = [],
+  onChange,
+  placeholder = "Введите теги...",
+  className
+}) => {
+  const [inputValue, setInputValue] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeSuggestion, setActiveSuggestion] = useState(-1);
+  const inputRef = useRef(null);
+  const suggestionsRef = useRef(null);
+  const { props } = usePage();
+  const suggestions = props.tagSuggestions || [];
+  useEffect(() => {
+    if (inputValue.trim().length < 1) {
+      setShowSuggestions(false);
+      return;
+    }
+    const timeoutId = setTimeout(() => {
+      router.get(
+        window.location.pathname,
+        { tagQuery: inputValue },
+        {
+          only: ["tagSuggestions"],
+          // Загружаем только suggestions
+          preserveState: true,
+          preserveScroll: true,
+          onSuccess: () => {
+            setShowSuggestions(suggestions.length > 0);
+          }
+        }
+      );
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [inputValue]);
+  const addTag = (tagName) => {
+    const trimmedTag = tagName.trim();
+    if (trimmedTag && !tags.includes(trimmedTag)) {
+      onChange([...tags, trimmedTag]);
+    }
+    setInputValue("");
+    setShowSuggestions(false);
+    setActiveSuggestion(-1);
+  };
+  const removeTag = (index) => {
+    const newTags = tags.filter((_, i) => i !== index);
+    onChange(newTags);
+  };
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && inputValue.trim()) {
+      e.preventDefault();
+      if (activeSuggestion >= 0 && suggestions[activeSuggestion]) {
+        addTag(suggestions[activeSuggestion].name);
+      } else {
+        addTag(inputValue);
+      }
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveSuggestion(Math.min(activeSuggestion + 1, suggestions.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveSuggestion(Math.max(activeSuggestion - 1, -1));
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+      setActiveSuggestion(-1);
+    } else if (e.key === "Backspace" && inputValue === "" && tags.length > 0) {
+      removeTag(tags.length - 1);
+    }
+  };
+  const handleSuggestionClick = (suggestion) => {
+    addTag(suggestion.name);
+  };
+  const containerClasses = classNames(
+    "tag-input-container",
+    className
+  );
+  return /* @__PURE__ */ jsxs("div", { className: containerClasses, children: [
+    /* @__PURE__ */ jsxs("div", { className: "tag-input", children: [
+      /* @__PURE__ */ jsx("div", { className: "tag-list", children: tags.map((tag, index) => /* @__PURE__ */ jsxs("span", { className: "tag-item", children: [
+        "#",
+        tag,
+        /* @__PURE__ */ jsx(
+          "button",
+          {
+            type: "button",
+            className: "tag-remove",
+            onClick: () => removeTag(index),
+            "aria-label": `Удалить тег ${tag}`,
+            children: "×"
+          }
+        )
+      ] }, index)) }),
+      /* @__PURE__ */ jsx(
+        "input",
+        {
+          ref: inputRef,
+          type: "text",
+          value: inputValue,
+          onChange: (e) => setInputValue(e.target.value),
+          onKeyDown: handleKeyDown,
+          onFocus: () => setShowSuggestions(suggestions.length > 0),
+          onBlur: () => {
+            setTimeout(() => setShowSuggestions(false), 200);
+          },
+          placeholder,
+          className: "tag-input-field"
+        }
+      )
+    ] }),
+    showSuggestions && suggestions.length > 0 && /* @__PURE__ */ jsx("div", { ref: suggestionsRef, className: "tag-suggestions", children: suggestions.map((suggestion, index) => /* @__PURE__ */ jsxs(
+      "div",
+      {
+        className: classNames("tag-suggestion", {
+          "active": index === activeSuggestion
+        }),
+        onClick: () => handleSuggestionClick(suggestion),
+        children: [
+          "#",
+          suggestion.name
+        ]
+      },
+      suggestion.id || index
+    )) })
+  ] });
 };
 const DefaultLayout = ({ children }) => {
   const { auth } = usePage().props;
@@ -355,7 +481,8 @@ const __vite_glob_0_3 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.def
 function Create() {
   const { data, setData, post, processing, errors } = useForm({
     title: "",
-    content: ""
+    content: "",
+    tags: []
   });
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -390,6 +517,18 @@ function Create() {
           required: true
         }
       ),
+      /* @__PURE__ */ jsxs("div", { className: "form-group", children: [
+        /* @__PURE__ */ jsx("label", { className: "form-label", children: "Теги" }),
+        /* @__PURE__ */ jsx(
+          TagInput,
+          {
+            tags: data.tags,
+            onChange: (tags) => setData("tags", tags),
+            placeholder: "Добавьте теги (например: #programming, #react)..."
+          }
+        ),
+        errors.tags && /* @__PURE__ */ jsx("div", { className: "error-message", children: errors.tags })
+      ] }),
       /* @__PURE__ */ jsxs("div", { className: "form-actions", children: [
         /* @__PURE__ */ jsx(
           Button,
@@ -412,7 +551,8 @@ const __vite_glob_0_4 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.def
 const Edit = ({ post }) => {
   const { data, setData, put, processing, errors } = useForm({
     title: post.title,
-    content: post.content
+    content: post.content,
+    tags: post.tags?.map((tag) => tag.name) || []
   });
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -447,6 +587,18 @@ const Edit = ({ post }) => {
           required: true
         }
       ),
+      /* @__PURE__ */ jsxs("div", { className: "form-group", children: [
+        /* @__PURE__ */ jsx("label", { className: "form-label", children: "Теги" }),
+        /* @__PURE__ */ jsx(
+          TagInput,
+          {
+            tags: data.tags,
+            onChange: (tags) => setData("tags", tags),
+            placeholder: "Добавьте теги (например: #programming, #react)..."
+          }
+        ),
+        errors.tags && /* @__PURE__ */ jsx("div", { className: "error-message", children: errors.tags })
+      ] }),
       /* @__PURE__ */ jsxs("div", { className: "form-actions", children: [
         /* @__PURE__ */ jsx(
           Button,
@@ -486,7 +638,11 @@ const Index = ({ posts }) => {
           post.user?.name || "Неизвестно",
           " | Создано: ",
           new Date(post.created_at).toLocaleDateString("ru-RU")
-        ] })
+        ] }),
+        post.tags && post.tags.length > 0 && /* @__PURE__ */ jsx("div", { className: "post-tags", children: post.tags.map((tag) => /* @__PURE__ */ jsxs("span", { className: "post-tag", children: [
+          "#",
+          tag.name
+        ] }, tag.id)) })
       ] }),
       auth.user && auth.user.id === post.user_id && /* @__PURE__ */ jsxs("div", { className: "post-actions", children: [
         /* @__PURE__ */ jsx(Link, { href: `/posts/${post.url}/edit`, children: /* @__PURE__ */ jsx(Button, { variant: "success", size: "small", children: "Изменить" }) }),
@@ -599,6 +755,10 @@ const Show = ({ post }) => {
         ] })
       ] }),
       /* @__PURE__ */ jsx("div", { className: "article-content", children: post.content.split("\n").map((paragraph, index) => /* @__PURE__ */ jsx("p", { children: paragraph }, index)) }),
+      post.tags && post.tags.length > 0 && /* @__PURE__ */ jsx("div", { className: "post-tags", children: post.tags.map((tag) => /* @__PURE__ */ jsxs("span", { className: "post-tag", children: [
+        "#",
+        tag.name
+      ] }, tag.id)) }),
       auth.user && auth.user.id === post.user_id && /* @__PURE__ */ jsxs("div", { className: "article-actions", children: [
         /* @__PURE__ */ jsx(Link, { href: `/posts/${post.url}/edit`, children: /* @__PURE__ */ jsx(Button, { variant: "success", size: "small", children: "Редактировать" }) }),
         /* @__PURE__ */ jsx(

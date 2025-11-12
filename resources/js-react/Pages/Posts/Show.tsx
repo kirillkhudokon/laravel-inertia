@@ -53,6 +53,20 @@ const Show: FC<PropsWithChildren<ShowProps>> = ({ post }) => {
                         ))}
                     </div>
 
+                    {post.tags && post.tags.length > 0 && (
+                        <div className="post-tags">
+                            {post.tags.map(tag => (
+                                <Link 
+                                    key={tag.id} 
+                                    href={`/tags/${tag.slug}`}
+                                    className="post-tag hover:bg-blue-100 transition-colors cursor-pointer"
+                                >
+                                    #{tag.name}
+                                </Link>
+                            ))}
+                        </div>
+                    )}
+
                     {auth.user && auth.user.id === post.user_id && (
                         <div className="article-actions">
                             <Link href={`/posts/${post.url}/edit`}>

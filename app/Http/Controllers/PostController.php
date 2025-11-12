@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
+use App\Models\Tag;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
@@ -15,10 +16,26 @@ class PostController extends Controller
      */
     public function index()
     {
-        $posts = Post::with('user')->latest()->get();
+        $posts = Post::with(['user', 'tags'])->latest()->get();
         
         return Inertia::render('Posts/Index', [
             'posts' => $posts
+        ]);
+    }
+
+    /**
+     * Display posts filtered by tag.
+     */
+    public function byTag($tagSlug)
+    {
+        $tag = Tag::where('slug', $tagSlug)->firstOrFail();
+        $posts = Post::whereHas('tags', function ($query) use ($tag) {
+            $query->where('tags.id', $tag->id);
+        })->with(['user', 'tags'])->latest()->get();
+        
+        return Inertia::render('Posts/ByTag', [
+            'posts' => $posts,
+            'tag' => $tag
         ]);
     }
 
@@ -28,7 +45,7 @@ class PostController extends Controller
     public function myPosts()
     {
         $posts = Post::where('user_id', Auth::id())
-            ->with('user')
+            ->with(['user', 'tags'])
             ->latest()
             ->get();
         
@@ -40,9 +57,22 @@ class PostController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
-        return Inertia::render('Posts/Create');
+        $tagQuery = $request->get('tagQuery', '');
+        $suggestions = [];
+        
+        if (strlen($tagQuery) >= 1) {
+            $suggestions = Tag::where('name', 'LIKE', '%' . $tagQuery . '%')
+                ->limit(10)
+                ->get(['id', 'name'])
+                ->toArray();
+        }
+
+        return Inertia::render('Posts/Create', [
+            'tagSuggestions' => $suggestions,
+            'tagQuery' => $tagQuery
+        ]);
     }
 
     /**
@@ -53,6 +83,8 @@ class PostController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
+            'tags' => 'nullable|array',
+            'tags.*' => 'string|max:50'
         ]);
 
         $url = Str::slug($validated['title']);
@@ -66,6 +98,10 @@ class PostController extends Controller
 
         $post->update(['url' => $url . '-' . $post->id]);
 
+        if (!empty($validated['tags'])) {
+            $post->syncTags($validated['tags']);
+        }
+
         return redirect()->route('home')
             ->with('success', 'Пост успешно создан!');
     }
@@ -75,7 +111,7 @@ class PostController extends Controller
      */
     public function show(Post $post)
     {
-        $post->load('user');
+        $post->load(['user', 'tags']);
         
         return Inertia::render('Posts/Show', [
             'post' => $post
@@ -85,14 +121,28 @@ class PostController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Post $post)
+    public function edit(Post $post, Request $request)
     {
         if ($post->user_id !== Auth::id()) {
             return Inertia::render('Errors/Forbidden');
         }
         
+        $post->load('tags');
+        
+        $tagQuery = $request->get('tagQuery', '');
+        $suggestions = [];
+        
+        if (strlen($tagQuery) >= 1) {
+            $suggestions = Tag::where('name', 'LIKE', '%' . $tagQuery . '%')
+                ->limit(10)
+                ->get(['id', 'name'])
+                ->toArray();
+        }
+        
         return Inertia::render('Posts/Edit', [
-            'post' => $post
+            'post' => $post,
+            'tagSuggestions' => $suggestions,
+            'tagQuery' => $tagQuery
         ]);
     }
 
@@ -108,6 +158,8 @@ class PostController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
+            'tags' => 'nullable|array',
+            'tags.*' => 'string|max:50'
         ]);
 
         if ($post->title !== $validated['title']) {
@@ -115,7 +167,15 @@ class PostController extends Controller
             $validated['url'] = $url . '-' . $post->id;
         }
 
-        $post->update($validated);
+        $post->update([
+            'title' => $validated['title'],
+            'content' => $validated['content'],
+            'url' => $validated['url'] ?? $post->url
+        ]);
+
+        if (array_key_exists('tags', $validated)) {
+            $post->syncTags($validated['tags'] ?? []);
+        }
 
         return redirect()->route('home')
             ->with('success', 'Пост успешно обновлен!');

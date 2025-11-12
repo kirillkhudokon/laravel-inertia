@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\TagController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PostController::class, 'index'])->name('home');
@@ -22,9 +23,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/posts/{post}/edit', [PostController::class, 'edit'])->name('posts.edit');
     Route::put('/posts/{post}', [PostController::class, 'update'])->name('posts.update');
     Route::delete('/posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
+
+    Route::get('/api/tags/search', [TagController::class, 'search'])->name('tags.search');
 });
 
 Route::get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');
+Route::get('/tags/{tag}', [PostController::class, 'byTag'])->name('posts.by-tag');
 
 Route::fallback(function () {
     return \Inertia\Inertia::render('Errors/NotFound');

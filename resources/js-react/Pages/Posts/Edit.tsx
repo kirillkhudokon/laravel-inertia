@@ -1,6 +1,6 @@
 import { useForm } from '@inertiajs/react';
 import DefaultLayout from '../../Layouts/DefaultLayout';
-import { Button, Link, Input, TextArea } from '../../Components';
+import { Button, Link, Input, TextArea, TagInput } from '../../Components';
 import { FC, FormEventHandler, PropsWithChildren } from 'react';
 import { Post } from '@/types';
 
@@ -12,6 +12,7 @@ const Edit: FC<PropsWithChildren<EditProps>> = ({ post }) => {
     const { data, setData, put, processing, errors } = useForm({
         title: post.title,
         content: post.content,
+        tags: post.tags?.map(tag => tag.name) || [],
     });
 
     const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
@@ -51,6 +52,20 @@ const Edit: FC<PropsWithChildren<EditProps>> = ({ post }) => {
                         error={errors.content}
                         required
                     />
+
+                    <div className="form-group">
+                        <label className="form-label">Теги</label>
+                        <TagInput
+                            tags={data.tags}
+                            onChange={(tags) => setData('tags', tags)}
+                            placeholder="Добавьте теги (например: #programming, #react)..."
+                        />
+                        {errors.tags && (
+                            <div className="error-message">
+                                {errors.tags}
+                            </div>
+                        )}
+                    </div>
 
                     <div className="form-actions">
                         <Button

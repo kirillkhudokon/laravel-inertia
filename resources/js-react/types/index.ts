@@ -7,6 +7,14 @@ export interface User {
   updated_at: string;
 }
 
+export interface Tag {
+  id: number;
+  name: string;
+  slug: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Post {
   id: number;
   title: string;
@@ -14,6 +22,7 @@ export interface Post {
   url: string;
   user_id: number;
   user?: User;
+  tags?: Tag[];
   created_at: string;
   updated_at: string;
 }
@@ -33,6 +42,8 @@ export interface PageProps {
   posts?: Post[];
   post?: Post;
   errors?: Record<string, string>;
+  tagSuggestions?: Tag[];
+  tagQuery?: string;
   [key: string]: any; // fix me
 }
 
