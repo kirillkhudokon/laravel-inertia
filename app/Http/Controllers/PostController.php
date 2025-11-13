@@ -19,8 +19,10 @@ class PostController extends Controller
      */
     public function index()
     {
-        $posts = Post::with(['user', 'tags'])->latest()->get();
-        
+        $posts = Post::with(['user', 'tags'])
+            ->latest()
+            ->paginate(10);
+
         return Inertia::render('Posts/Index', [
             'posts' => $posts
         ]);
@@ -34,7 +36,7 @@ class PostController extends Controller
         $tag = Tag::where('slug', $tagSlug)->firstOrFail();
         $posts = Post::whereHas('tags', function ($query) use ($tag) {
             $query->where('tags.id', $tag->id);
-        })->with(['user', 'tags'])->latest()->get();
+        })->with(['user', 'tags'])->latest()->paginate(10);
         
         return Inertia::render('Posts/ByTag', [
             'posts' => $posts,
@@ -50,7 +52,7 @@ class PostController extends Controller
         $posts = Post::where('user_id', Auth::id())
             ->with(['user', 'tags'])
             ->latest()
-            ->get();
+            ->paginate(10);
         
         return Inertia::render('Posts/MyPosts', [
             'posts' => $posts
