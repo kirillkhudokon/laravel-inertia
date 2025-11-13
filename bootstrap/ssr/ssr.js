@@ -1,9 +1,10 @@
 import { jsx, jsxs, Fragment } from "react/jsx-runtime";
-import { Link as Link$1, useForm, usePage, createInertiaApp } from "@inertiajs/react";
+import { Link as Link$1, usePage, router, useForm, createInertiaApp } from "@inertiajs/react";
 import classNames from "classnames";
+import { useState, useRef, useEffect } from "react";
 import createServer from "@inertiajs/react/server";
 import { renderToString } from "react-dom/server";
-function Button({
+const Button = ({
   children,
   variant = "primary",
   size = "normal",
@@ -12,7 +13,7 @@ function Button({
   onClick,
   className,
   ...props
-}) {
+}) => {
   const classes = classNames(
     "btn",
     `btn-${variant}`,
@@ -32,17 +33,17 @@ function Button({
       children
     }
   );
-}
-function Link({
+};
+const Link = ({
   children,
   href,
   variant = "default",
-  as = "a",
   method = "get",
+  as = "a",
   onBefore,
   className,
   ...props
-}) {
+}) => {
   const classes = classNames(
     {
       "link": variant === "default",
@@ -73,8 +74,8 @@ function Link({
       children
     }
   );
-}
-function Input({
+};
+const Input = ({
   id,
   label,
   value,
@@ -85,7 +86,7 @@ function Input({
   required = false,
   className,
   ...props
-}) {
+}) => {
   const inputClasses = classNames(
     "input",
     {
@@ -112,8 +113,8 @@ function Input({
     ),
     error && /* @__PURE__ */ jsx("div", { className: "error-message", children: error })
   ] });
-}
-function TextArea({
+};
+const TextArea = ({
   id,
   label,
   value,
@@ -124,7 +125,7 @@ function TextArea({
   required = false,
   className,
   ...props
-}) {
+}) => {
   const textareaClasses = classNames(
     "textarea",
     {
@@ -151,58 +152,344 @@ function TextArea({
     ),
     error && /* @__PURE__ */ jsx("div", { className: "error-message", children: error })
   ] });
-}
-function Alert({ children, type = "success", className }) {
+};
+const Alert = ({ children, type = "success", className }) => {
   const alertClasses = classNames(
     "alert",
     `alert-${type}`,
     className
   );
   return /* @__PURE__ */ jsx("div", { className: alertClasses, children });
-}
-function Card({
+};
+const Card = ({
   children,
   variant = "default",
   padding = "normal",
   className,
   ...props
-}) {
+}) => {
   const cardClasses = classNames(
     "post-card",
-    // базовый класс
     {
-      // условные классы
       "post-card--featured": variant === "featured",
       "post-card--compact": padding === "small",
       "post-card--spacious": padding === "large"
     },
     className
-    // дополнительные классы извне
   );
   return /* @__PURE__ */ jsx("div", { className: cardClasses, ...props, children });
-}
-function DefaultLayout({ children }) {
-  return /* @__PURE__ */ jsxs(Fragment, { children: [
-    /* @__PURE__ */ jsx("div", { className: "section-header", children: /* @__PURE__ */ jsx("div", { className: "container", children: /* @__PURE__ */ jsx("h2", { className: "mb-0", children: "Laravel Inertia Blog" }) }) }),
-    /* @__PURE__ */ jsx("div", { className: "section-nav", children: /* @__PURE__ */ jsxs("div", { className: "container", children: [
-      /* @__PURE__ */ jsx(Link, { href: "/", variant: "button", children: "Главная" }),
-      /* @__PURE__ */ jsx(Link, { href: "/posts/create", variant: "button", children: "Создать пост" })
-    ] }) }),
-    /* @__PURE__ */ jsx("div", { className: "min-height-screen", children }),
-    /* @__PURE__ */ jsx("div", { className: "section-footer", children: /* @__PURE__ */ jsx("div", { className: "container text-center", children: /* @__PURE__ */ jsx("p", { className: "mb-0 text-muted", children: "© 2025 Laravel Inertia Blog" }) }) })
+};
+const TagInput = ({
+  tags = [],
+  onChange,
+  placeholder = "Введите теги...",
+  className
+}) => {
+  const [inputValue, setInputValue] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeSuggestion, setActiveSuggestion] = useState(-1);
+  const inputRef = useRef(null);
+  const suggestionsRef = useRef(null);
+  const { props } = usePage();
+  const suggestions = props.tagSuggestions || [];
+  useEffect(() => {
+    if (inputValue.trim().length < 1) {
+      setShowSuggestions(false);
+      return;
+    }
+    const timeoutId = setTimeout(() => {
+      router.get(
+        window.location.pathname,
+        { tagQuery: inputValue },
+        {
+          only: ["tagSuggestions"],
+          // Загружаем только suggestions
+          preserveState: true,
+          preserveScroll: true,
+          onSuccess: () => {
+            setShowSuggestions(suggestions.length > 0);
+          }
+        }
+      );
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [inputValue]);
+  const addTag = (tagName) => {
+    const trimmedTag = tagName.trim();
+    if (trimmedTag && !tags.includes(trimmedTag)) {
+      onChange([...tags, trimmedTag]);
+    }
+    setInputValue("");
+    setShowSuggestions(false);
+    setActiveSuggestion(-1);
+  };
+  const removeTag = (index) => {
+    const newTags = tags.filter((_, i) => i !== index);
+    onChange(newTags);
+  };
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && inputValue.trim()) {
+      e.preventDefault();
+      if (activeSuggestion >= 0 && suggestions[activeSuggestion]) {
+        addTag(suggestions[activeSuggestion].name);
+      } else {
+        addTag(inputValue);
+      }
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveSuggestion(Math.min(activeSuggestion + 1, suggestions.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveSuggestion(Math.max(activeSuggestion - 1, -1));
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+      setActiveSuggestion(-1);
+    } else if (e.key === "Backspace" && inputValue === "" && tags.length > 0) {
+      removeTag(tags.length - 1);
+    }
+  };
+  const handleSuggestionClick = (suggestion) => {
+    addTag(suggestion.name);
+  };
+  const containerClasses = classNames(
+    "tag-input-container",
+    className
+  );
+  return /* @__PURE__ */ jsxs("div", { className: containerClasses, children: [
+    /* @__PURE__ */ jsxs("div", { className: "tag-input", children: [
+      /* @__PURE__ */ jsx("div", { className: "tag-list", children: tags.map((tag, index) => /* @__PURE__ */ jsxs("span", { className: "tag-item", children: [
+        "#",
+        tag,
+        /* @__PURE__ */ jsx(
+          "button",
+          {
+            type: "button",
+            className: "tag-remove",
+            onClick: () => removeTag(index),
+            "aria-label": `Удалить тег ${tag}`,
+            children: "×"
+          }
+        )
+      ] }, index)) }),
+      /* @__PURE__ */ jsx(
+        "input",
+        {
+          ref: inputRef,
+          type: "text",
+          value: inputValue,
+          onChange: (e) => setInputValue(e.target.value),
+          onKeyDown: handleKeyDown,
+          onFocus: () => setShowSuggestions(suggestions.length > 0),
+          onBlur: () => {
+            setTimeout(() => setShowSuggestions(false), 200);
+          },
+          placeholder,
+          className: "tag-input-field"
+        }
+      )
+    ] }),
+    showSuggestions && suggestions.length > 0 && /* @__PURE__ */ jsx("div", { ref: suggestionsRef, className: "tag-suggestions", children: suggestions.map((suggestion, index) => /* @__PURE__ */ jsxs(
+      "div",
+      {
+        className: classNames("tag-suggestion", {
+          "active": index === activeSuggestion
+        }),
+        onClick: () => handleSuggestionClick(suggestion),
+        children: [
+          "#",
+          suggestion.name
+        ]
+      },
+      suggestion.id || index
+    )) })
   ] });
+};
+const DefaultLayout = ({ children }) => {
+  const { auth } = usePage().props;
+  return /* @__PURE__ */ jsxs("div", { className: "app-layout", children: [
+    /* @__PURE__ */ jsx("div", { className: "topbar", children: /* @__PURE__ */ jsxs("div", { className: "d-flex justify-content-between align-items-center pl-5 pr-5", children: [
+      /* @__PURE__ */ jsx("h2", { className: "mb-0 mt-0 text-white", children: "Blog" }),
+      auth.user ? /* @__PURE__ */ jsxs("div", { className: "d-flex align-items-center gap-3", children: [
+        /* @__PURE__ */ jsxs("span", { className: "text-white", children: [
+          "Привет, ",
+          auth.user.name,
+          "!"
+        ] }),
+        /* @__PURE__ */ jsx(Link, { href: "/logout", method: "post", variant: "button", children: "Выйти" })
+      ] }) : /* @__PURE__ */ jsxs("div", { className: "d-flex gap-2", children: [
+        /* @__PURE__ */ jsx(Link, { href: "/login", variant: "button", children: "Войти" }),
+        /* @__PURE__ */ jsx(Link, { href: "/register", variant: "button", children: "Регистрация" })
+      ] })
+    ] }) }),
+    /* @__PURE__ */ jsxs("div", { className: "app-content", children: [
+      /* @__PURE__ */ jsx("div", { className: "sidebar", children: /* @__PURE__ */ jsxs("nav", { className: "sidebar-nav", children: [
+        /* @__PURE__ */ jsx(Link, { href: "/", className: "sidebar-link", children: "Все посты" }),
+        auth.user && /* @__PURE__ */ jsxs(Fragment, { children: [
+          /* @__PURE__ */ jsx(Link, { href: "/my-posts", className: "sidebar-link", children: "Мои посты" }),
+          /* @__PURE__ */ jsx(Link, { href: "/posts/create", className: "sidebar-link", children: "Создать пост" })
+        ] })
+      ] }) }),
+      /* @__PURE__ */ jsx("div", { className: "main-content", children })
+    ] }),
+    /* @__PURE__ */ jsx("div", { className: "footer", children: /* @__PURE__ */ jsx("div", { className: "container text-center", children: /* @__PURE__ */ jsx("p", { className: "mb-0 text-muted", children: "© 2025 Blog" }) }) })
+  ] });
+};
+function Login() {
+  const { data, setData, post, processing, errors } = useForm({
+    email: "",
+    password: ""
+  });
+  const submit = (e) => {
+    e.preventDefault();
+    post("/login");
+  };
+  return /* @__PURE__ */ jsx(DefaultLayout, { children: /* @__PURE__ */ jsx("div", { className: "section-content", children: /* @__PURE__ */ jsx("div", { className: "container", children: /* @__PURE__ */ jsx("div", { className: "row justify-content-center", children: /* @__PURE__ */ jsx("div", { className: "col-md-6", children: /* @__PURE__ */ jsxs(Card, { className: "p-4", children: [
+    /* @__PURE__ */ jsx("h3", { className: "text-center mb-4", children: "Вход" }),
+    errors.email && /* @__PURE__ */ jsx(Alert, { variant: "danger", type: "danger", children: errors.email }),
+    /* @__PURE__ */ jsxs("form", { onSubmit: submit, children: [
+      /* @__PURE__ */ jsx("div", { className: "mb-3", children: /* @__PURE__ */ jsx(
+        Input,
+        {
+          type: "email",
+          placeholder: "Email",
+          value: data.email,
+          onChange: (e) => setData("email", e.target.value),
+          required: true
+        }
+      ) }),
+      /* @__PURE__ */ jsx("div", { className: "mb-3", children: /* @__PURE__ */ jsx(
+        Input,
+        {
+          type: "password",
+          placeholder: "Пароль",
+          value: data.password,
+          onChange: (e) => setData("password", e.target.value),
+          required: true
+        }
+      ) }),
+      /* @__PURE__ */ jsx(Button, { type: "submit", disabled: processing, className: "w-100", children: processing ? "Вход..." : "Войти" })
+    ] }),
+    /* @__PURE__ */ jsx("div", { className: "text-center mt-3", children: /* @__PURE__ */ jsxs("p", { children: [
+      "Нет аккаунта? ",
+      /* @__PURE__ */ jsx("a", { href: "/register", children: "Зарегистрируйтесь" })
+    ] }) })
+  ] }) }) }) }) }) });
 }
+const __vite_glob_0_0 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: Login
+}, Symbol.toStringTag, { value: "Module" }));
+function Register() {
+  const { data, setData, post, processing, errors } = useForm({
+    name: "",
+    email: "",
+    password: "",
+    password_confirmation: ""
+  });
+  const submit = (e) => {
+    e.preventDefault();
+    post("/register");
+  };
+  return /* @__PURE__ */ jsx(DefaultLayout, { children: /* @__PURE__ */ jsx("div", { className: "section-content", children: /* @__PURE__ */ jsx("div", { className: "container", children: /* @__PURE__ */ jsx("div", { className: "row justify-content-center", children: /* @__PURE__ */ jsx("div", { className: "col-md-6", children: /* @__PURE__ */ jsxs(Card, { className: "p-4", children: [
+    /* @__PURE__ */ jsx("h3", { className: "text-center mb-4", children: "Регистрация" }),
+    /* @__PURE__ */ jsxs("form", { onSubmit: submit, children: [
+      /* @__PURE__ */ jsxs("div", { className: "mb-3", children: [
+        /* @__PURE__ */ jsx(
+          Input,
+          {
+            type: "text",
+            placeholder: "Имя",
+            value: data.name,
+            onChange: (e) => setData("name", e.target.value),
+            required: true
+          }
+        ),
+        errors.name && /* @__PURE__ */ jsx("div", { className: "text-danger small mt-1", children: errors.name })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "mb-3", children: [
+        /* @__PURE__ */ jsx(
+          Input,
+          {
+            type: "email",
+            placeholder: "Email",
+            value: data.email,
+            onChange: (e) => setData("email", e.target.value),
+            required: true
+          }
+        ),
+        errors.email && /* @__PURE__ */ jsx("div", { className: "text-danger small mt-1", children: errors.email })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "mb-3", children: [
+        /* @__PURE__ */ jsx(
+          Input,
+          {
+            type: "password",
+            placeholder: "Пароль",
+            value: data.password,
+            onChange: (e) => setData("password", e.target.value),
+            required: true
+          }
+        ),
+        errors.password && /* @__PURE__ */ jsx("div", { className: "text-danger small mt-1", children: errors.password })
+      ] }),
+      /* @__PURE__ */ jsx("div", { className: "mb-3", children: /* @__PURE__ */ jsx(
+        Input,
+        {
+          type: "password",
+          placeholder: "Подтверждение пароля",
+          value: data.password_confirmation,
+          onChange: (e) => setData("password_confirmation", e.target.value),
+          required: true
+        }
+      ) }),
+      /* @__PURE__ */ jsx(Button, { type: "submit", disabled: processing, className: "w-100", children: processing ? "Регистрация..." : "Зарегистрироваться" })
+    ] }),
+    /* @__PURE__ */ jsx("div", { className: "text-center mt-3", children: /* @__PURE__ */ jsxs("p", { children: [
+      "Уже есть аккаунт? ",
+      /* @__PURE__ */ jsx("a", { href: "/login", children: "Войдите" })
+    ] }) })
+  ] }) }) }) }) }) });
+}
+const __vite_glob_0_1 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: Register
+}, Symbol.toStringTag, { value: "Module" }));
+function Forbidden() {
+  return /* @__PURE__ */ jsx(DefaultLayout, { children: /* @__PURE__ */ jsx("div", { className: "section-content", children: /* @__PURE__ */ jsx("div", { className: "container text-center", children: /* @__PURE__ */ jsxs("div", { className: "py-5", children: [
+    /* @__PURE__ */ jsx("h1", { className: "display-1", children: "403" }),
+    /* @__PURE__ */ jsx("h2", { className: "mb-4", children: "Доступ запрещен" }),
+    /* @__PURE__ */ jsx("p", { className: "text-muted mb-4", children: "У вас нет прав для доступа к этой странице." }),
+    /* @__PURE__ */ jsx(Link, { href: "/", variant: "button", children: "Вернуться на главную" })
+  ] }) }) }) });
+}
+const __vite_glob_0_2 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: Forbidden
+}, Symbol.toStringTag, { value: "Module" }));
+function NotFound() {
+  return /* @__PURE__ */ jsx(DefaultLayout, { children: /* @__PURE__ */ jsx("div", { className: "section-content", children: /* @__PURE__ */ jsx("div", { className: "container text-center", children: /* @__PURE__ */ jsxs("div", { className: "py-5", children: [
+    /* @__PURE__ */ jsx("h1", { className: "display-1", children: "404" }),
+    /* @__PURE__ */ jsx("h2", { className: "mb-4", children: "Страница не найдена" }),
+    /* @__PURE__ */ jsx("p", { className: "text-muted mb-4", children: "К сожалению, запрашиваемая страница не существует." }),
+    /* @__PURE__ */ jsx(Link, { href: "/", variant: "button", children: "Вернуться на главную" })
+  ] }) }) }) });
+}
+const __vite_glob_0_3 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: NotFound
+}, Symbol.toStringTag, { value: "Module" }));
 function Create() {
   const { data, setData, post, processing, errors } = useForm({
     title: "",
-    content: ""
+    content: "",
+    tags: []
   });
   const handleSubmit = (e) => {
     e.preventDefault();
     post("/posts");
   };
   return /* @__PURE__ */ jsx(DefaultLayout, { children: /* @__PURE__ */ jsxs("div", { className: "content container-small", children: [
-    /* @__PURE__ */ jsx("div", { className: "mb-4", children: /* @__PURE__ */ jsx(Link, { href: "/", children: "← Назад к постам" }) }),
+    /* @__PURE__ */ jsx("div", { className: "mb-4", children: /* @__PURE__ */ jsx(Link, { href: "/", children: "Назад к постам" }) }),
     /* @__PURE__ */ jsx("h1", { children: "Создать новый пост" }),
     /* @__PURE__ */ jsxs("form", { onSubmit: handleSubmit, className: "mt-4", children: [
       /* @__PURE__ */ jsx(
@@ -230,6 +517,18 @@ function Create() {
           required: true
         }
       ),
+      /* @__PURE__ */ jsxs("div", { className: "form-group", children: [
+        /* @__PURE__ */ jsx("label", { className: "form-label", children: "Теги" }),
+        /* @__PURE__ */ jsx(
+          TagInput,
+          {
+            tags: data.tags,
+            onChange: (tags) => setData("tags", tags),
+            placeholder: "Добавьте теги (например: #programming, #react)..."
+          }
+        ),
+        errors.tags && /* @__PURE__ */ jsx("div", { className: "error-message", children: errors.tags })
+      ] }),
       /* @__PURE__ */ jsxs("div", { className: "form-actions", children: [
         /* @__PURE__ */ jsx(
           Button,
@@ -245,21 +544,22 @@ function Create() {
     ] })
   ] }) });
 }
-const __vite_glob_0_0 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const __vite_glob_0_4 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   default: Create
 }, Symbol.toStringTag, { value: "Module" }));
-function Edit({ post }) {
+const Edit = ({ post }) => {
   const { data, setData, put, processing, errors } = useForm({
     title: post.title,
-    content: post.content
+    content: post.content,
+    tags: post.tags?.map((tag) => tag.name) || []
   });
   const handleSubmit = (e) => {
     e.preventDefault();
     put(`/posts/${post.url}`);
   };
   return /* @__PURE__ */ jsx(DefaultLayout, { children: /* @__PURE__ */ jsxs("div", { className: "content container-small", children: [
-    /* @__PURE__ */ jsx("div", { className: "mb-4", children: /* @__PURE__ */ jsx(Link, { href: "/", children: "← Назад к постам" }) }),
+    /* @__PURE__ */ jsx("div", { className: "mb-4", children: /* @__PURE__ */ jsx(Link, { href: "/", children: "Назад к постам" }) }),
     /* @__PURE__ */ jsx("h1", { children: "Редактировать пост" }),
     /* @__PURE__ */ jsxs("form", { onSubmit: handleSubmit, className: "mt-4", children: [
       /* @__PURE__ */ jsx(
@@ -287,6 +587,18 @@ function Edit({ post }) {
           required: true
         }
       ),
+      /* @__PURE__ */ jsxs("div", { className: "form-group", children: [
+        /* @__PURE__ */ jsx("label", { className: "form-label", children: "Теги" }),
+        /* @__PURE__ */ jsx(
+          TagInput,
+          {
+            tags: data.tags,
+            onChange: (tags) => setData("tags", tags),
+            placeholder: "Добавьте теги (например: #programming, #react)..."
+          }
+        ),
+        errors.tags && /* @__PURE__ */ jsx("div", { className: "error-message", children: errors.tags })
+      ] }),
       /* @__PURE__ */ jsxs("div", { className: "form-actions", children: [
         /* @__PURE__ */ jsx(
           Button,
@@ -301,13 +613,13 @@ function Edit({ post }) {
       ] })
     ] })
   ] }) });
-}
-const __vite_glob_0_1 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+};
+const __vite_glob_0_5 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   default: Edit
 }, Symbol.toStringTag, { value: "Module" }));
-function Index({ posts }) {
-  const { flash } = usePage().props;
+const Index = ({ posts }) => {
+  const { flash, auth } = usePage().props;
   return /* @__PURE__ */ jsx(DefaultLayout, { children: /* @__PURE__ */ jsxs("div", { className: "content container", children: [
     /* @__PURE__ */ jsxs("div", { className: "flex-between mb-4", children: [
       /* @__PURE__ */ jsx("h1", { className: "mb-0", children: "Все посты" }),
@@ -326,9 +638,13 @@ function Index({ posts }) {
           post.user?.name || "Неизвестно",
           " | Создано: ",
           new Date(post.created_at).toLocaleDateString("ru-RU")
-        ] })
+        ] }),
+        post.tags && post.tags.length > 0 && /* @__PURE__ */ jsx("div", { className: "post-tags", children: post.tags.map((tag) => /* @__PURE__ */ jsxs("span", { className: "post-tag", children: [
+          "#",
+          tag.name
+        ] }, tag.id)) })
       ] }),
-      /* @__PURE__ */ jsxs("div", { className: "post-actions", children: [
+      auth.user && auth.user.id === post.user_id && /* @__PURE__ */ jsxs("div", { className: "post-actions", children: [
         /* @__PURE__ */ jsx(Link, { href: `/posts/${post.url}/edit`, children: /* @__PURE__ */ jsx(Button, { variant: "success", size: "small", children: "Изменить" }) }),
         /* @__PURE__ */ jsx(
           Link,
@@ -337,20 +653,81 @@ function Index({ posts }) {
             method: "delete",
             as: "button",
             onBefore: () => confirm("Вы уверены, что хотите удалить этот пост?"),
-            children: /* @__PURE__ */ jsx(Button, { variant: "danger", size: "small", children: "Удалить" })
+            className: "btn-danger btn-small",
+            children: "Удалить"
           }
         )
       ] })
     ] }) }, post.id)) })
   ] }) });
-}
-const __vite_glob_0_2 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+};
+const __vite_glob_0_6 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   default: Index
 }, Symbol.toStringTag, { value: "Module" }));
-function Show({ post }) {
+const MyPosts = ({ posts }) => {
+  const { delete: destroy } = useForm();
+  const handleDelete = (post) => {
+    if (confirm("Вы уверены, что хотите удалить этот пост?")) {
+      destroy(`/posts/${post.url}`);
+    }
+  };
+  return /* @__PURE__ */ jsx(DefaultLayout, { children: /* @__PURE__ */ jsx("div", { className: "section-content", children: /* @__PURE__ */ jsxs("div", { className: "container", children: [
+    /* @__PURE__ */ jsxs("div", { className: "d-flex justify-content-between align-items-center mb-4", children: [
+      /* @__PURE__ */ jsx("h1", { children: "Мои посты" }),
+      /* @__PURE__ */ jsx(Link, { href: "/posts/create", variant: "button", children: "Создать новый пост" })
+    ] }),
+    posts.length === 0 ? /* @__PURE__ */ jsxs("div", { className: "text-center py-5", children: [
+      /* @__PURE__ */ jsx("h3", { children: "У вас пока нет постов" }),
+      /* @__PURE__ */ jsx("p", { className: "text-muted", children: "Создайте свой первый пост!" }),
+      /* @__PURE__ */ jsx(Link, { href: "/posts/create", variant: "button", children: "Создать пост" })
+    ] }) : /* @__PURE__ */ jsx("div", { className: "row", children: posts.map((post) => /* @__PURE__ */ jsx("div", { className: "col-md-6 col-lg-4 mb-4", children: /* @__PURE__ */ jsxs("div", { className: "card h-100", children: [
+      /* @__PURE__ */ jsxs("div", { className: "card-body", children: [
+        /* @__PURE__ */ jsx("h5", { className: "card-title", children: post.title }),
+        /* @__PURE__ */ jsxs("p", { className: "card-text", children: [
+          post.content.substring(0, 100),
+          post.content.length > 100 && "..."
+        ] }),
+        /* @__PURE__ */ jsx("div", { className: "small text-muted mb-3", children: new Date(post.created_at).toLocaleDateString("ru-RU") })
+      ] }),
+      /* @__PURE__ */ jsx("div", { className: "card-footer", children: /* @__PURE__ */ jsxs("div", { className: "d-flex gap-2", children: [
+        /* @__PURE__ */ jsx(
+          Link,
+          {
+            href: `/posts/${post.url}`,
+            variant: "button",
+            children: "Читать"
+          }
+        ),
+        /* @__PURE__ */ jsx(
+          Link,
+          {
+            href: `/posts/${post.url}/edit`,
+            variant: "button",
+            children: "Редактировать"
+          }
+        ),
+        /* @__PURE__ */ jsx(
+          Button,
+          {
+            variant: "danger",
+            size: "md",
+            onClick: () => handleDelete(post),
+            children: "Удалить"
+          }
+        )
+      ] }) })
+    ] }) }, post.id)) })
+  ] }) }) });
+};
+const __vite_glob_0_7 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: MyPosts
+}, Symbol.toStringTag, { value: "Module" }));
+const Show = ({ post }) => {
+  const { auth } = usePage().props;
   return /* @__PURE__ */ jsx(DefaultLayout, { children: /* @__PURE__ */ jsxs("div", { className: "content container-small", children: [
-    /* @__PURE__ */ jsx("div", { className: "mb-4", children: /* @__PURE__ */ jsx(Link, { href: "/", children: "← Назад к постам" }) }),
+    /* @__PURE__ */ jsx("div", { className: "mb-4", children: /* @__PURE__ */ jsx(Link, { href: "/", children: "Назад к постам" }) }),
     /* @__PURE__ */ jsxs("article", { className: "article", children: [
       /* @__PURE__ */ jsxs("header", { className: "article-header", children: [
         /* @__PURE__ */ jsx("h1", { className: "article-title", children: post.title }),
@@ -378,8 +755,12 @@ function Show({ post }) {
         ] })
       ] }),
       /* @__PURE__ */ jsx("div", { className: "article-content", children: post.content.split("\n").map((paragraph, index) => /* @__PURE__ */ jsx("p", { children: paragraph }, index)) }),
-      /* @__PURE__ */ jsxs("div", { className: "article-actions", children: [
-        /* @__PURE__ */ jsx(Link, { href: `/posts/${post.url}/edit`, children: /* @__PURE__ */ jsx(Button, { variant: "success", children: "Редактировать" }) }),
+      post.tags && post.tags.length > 0 && /* @__PURE__ */ jsx("div", { className: "post-tags", children: post.tags.map((tag) => /* @__PURE__ */ jsxs("span", { className: "post-tag", children: [
+        "#",
+        tag.name
+      ] }, tag.id)) }),
+      auth.user && auth.user.id === post.user_id && /* @__PURE__ */ jsxs("div", { className: "article-actions", children: [
+        /* @__PURE__ */ jsx(Link, { href: `/posts/${post.url}/edit`, children: /* @__PURE__ */ jsx(Button, { variant: "success", size: "small", children: "Редактировать" }) }),
         /* @__PURE__ */ jsx(
           Link,
           {
@@ -387,14 +768,15 @@ function Show({ post }) {
             method: "delete",
             as: "button",
             onBefore: () => confirm("Вы уверены, что хотите удалить этот пост?"),
-            children: /* @__PURE__ */ jsx(Button, { variant: "danger", children: "Удалить" })
+            className: "btn-danger btn-small",
+            children: "Удалить"
           }
         )
       ] })
     ] })
   ] }) });
-}
-const __vite_glob_0_3 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+};
+const __vite_glob_0_8 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   default: Show
 }, Symbol.toStringTag, { value: "Module" }));
@@ -403,8 +785,8 @@ createServer(
     page,
     render: renderToString,
     resolve: (name) => {
-      const pages = /* @__PURE__ */ Object.assign({ "./Pages/Posts/Create.jsx": __vite_glob_0_0, "./Pages/Posts/Edit.jsx": __vite_glob_0_1, "./Pages/Posts/Index.jsx": __vite_glob_0_2, "./Pages/Posts/Show.jsx": __vite_glob_0_3 });
-      return pages[`./Pages/${name}.jsx`];
+      const pages = /* @__PURE__ */ Object.assign({ "./Pages/Auth/Login.tsx": __vite_glob_0_0, "./Pages/Auth/Register.tsx": __vite_glob_0_1, "./Pages/Errors/Forbidden.tsx": __vite_glob_0_2, "./Pages/Errors/NotFound.tsx": __vite_glob_0_3, "./Pages/Posts/Create.tsx": __vite_glob_0_4, "./Pages/Posts/Edit.tsx": __vite_glob_0_5, "./Pages/Posts/Index.tsx": __vite_glob_0_6, "./Pages/Posts/MyPosts.tsx": __vite_glob_0_7, "./Pages/Posts/Show.tsx": __vite_glob_0_8 });
+      return pages[`./Pages/${name}.tsx`];
     },
     setup({ App, props }) {
       return /* @__PURE__ */ jsx(App, { ...props });

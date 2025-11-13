@@ -1,7 +1,15 @@
 import DefaultLayout from '../../Layouts/DefaultLayout';
 import { Button, Link } from '../../Components';
+import { usePage } from '@inertiajs/react';
+import { PageProps, Post } from '@/types';
+import { FC, PropsWithChildren } from 'react';
 
-export default function Show({ post }) {
+interface ShowProps {
+    post: Post
+}
+
+const Show: FC<PropsWithChildren<ShowProps>> = ({ post }) => {
+    const { auth } = usePage<PageProps>().props;
     return (
         <DefaultLayout>
             <div className="content container-small">
@@ -45,25 +53,43 @@ export default function Show({ post }) {
                         ))}
                     </div>
 
-                    <div className="article-actions">
-                        <Link href={`/posts/${post.url}/edit`}>
-                            <Button variant="success">
-                                Редактировать
-                            </Button>
-                        </Link>
-                        
-                        <Link 
-                            href={`/posts/${post.url}`}
-                            method="delete"
-                            as="button"
-                            onBefore={() => confirm('Вы уверены, что хотите удалить этот пост?')}
-                            className="btn-danger"
-                        >
-                            Удалить
-                        </Link>
-                    </div>
+                    {post.tags && post.tags.length > 0 && (
+                        <div className="post-tags">
+                            {post.tags.map(tag => (
+                                <Link 
+                                    key={tag.id} 
+                                    href={`/tags/${tag.slug}`}
+                                    className="post-tag hover:bg-blue-100 transition-colors cursor-pointer"
+                                >
+                                    #{tag.name}
+                                </Link>
+                            ))}
+                        </div>
+                    )}
+
+                    {auth.user && auth.user.id === post.user_id && (
+                        <div className="article-actions">
+                            <Link href={`/posts/${post.url}/edit`}>
+                                  <Button variant="success" size="small">
+                                    Редактировать
+                                </Button>
+                            </Link>
+                            
+                            <Link 
+                                href={`/posts/${post.url}`}
+                                method="delete"
+                                as="button"
+                                onBefore={() => confirm('Вы уверены, что хотите удалить этот пост?')}
+                                className="btn-danger btn-small"
+                            >
+                                Удалить
+                            </Link>
+                        </div>
+                    )}
                 </article>
             </div>
         </DefaultLayout>
     );
 }
+
+export default Show;

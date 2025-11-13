@@ -1,13 +1,20 @@
+import { FC, PropsWithChildren, HTMLAttributes } from 'react';
 import classNames from 'classnames';
 import '../../css/app.css';
 
-export default function Card({ 
+interface CardProps extends HTMLAttributes<HTMLDivElement> {
+    variant?: 'default' | 'featured';
+    padding?: 'small' | 'normal' | 'large';
+    className?: string;
+}
+
+const Card: FC<PropsWithChildren<CardProps>> = ({ 
     children, 
     variant = 'default',
     padding = 'normal',
     className,
     ...props 
-}) {
+}) => {
     const cardClasses = classNames(
         'post-card',
         {
@@ -23,4 +30,6 @@ export default function Card({
             {children}
         </div>
     );
-}
+};
+
+export default Card;

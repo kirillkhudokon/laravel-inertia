@@ -1,14 +1,20 @@
 import { useForm } from '@inertiajs/react';
 import DefaultLayout from '../../Layouts/DefaultLayout';
-import { Button, Link, Input, TextArea } from '../../Components';
+import { Button, Link, Input, TextArea, TagInput } from '../../Components';
+import { FormEventHandler } from 'react';
 
 export default function Create() {
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors } = useForm<{
+        title: string;
+        content: string;
+        tags: string[];
+    }>({
         title: '',
         content: '',
+        tags: []
     });
 
-    const handleSubmit = (e) => {
+    const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
         e.preventDefault();
         post('/posts');
     };
@@ -45,6 +51,20 @@ export default function Create() {
                         error={errors.content}
                         required
                     />
+
+                    <div className="form-group">
+                        <label className="form-label">Теги</label>
+                        <TagInput
+                            tags={data.tags}
+                            onChange={(tags) => setData('tags', tags)}
+                            placeholder="Добавьте теги (например: #programming, #react)..."
+                        />
+                        {errors.tags && (
+                            <div className="error-message">
+                                {errors.tags}
+                            </div>
+                        )}
+                    </div>
 
                     <div className="form-actions">
                         <Button
