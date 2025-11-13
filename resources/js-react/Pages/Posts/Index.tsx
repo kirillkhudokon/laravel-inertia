@@ -49,7 +49,7 @@ const Index: FC<PropsWithChildren<IndexProps>> = ({ posts }) => {
                                         </p>
                                         <div className="post-meta">
                                             Автор: {post.user?.name || 'Неизвестно'} | 
-                                            Создано: {new Date(post.created_at).toLocaleDateString('ru-RU')}
+                                            Создано: {post.created_at ? new Date(post.created_at).toLocaleDateString('ru-RU') : 'N/A'}
                                         </div>
                                         {post.tags && post.tags.length > 0 && (
                                             <div className="post-tags">

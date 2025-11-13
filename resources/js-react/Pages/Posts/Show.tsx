@@ -26,14 +26,14 @@ const Show: FC<PropsWithChildren<ShowProps>> = ({ post }) => {
                         </h1>
                         <div className="article-meta">
                             Автор: {post.user?.name || 'Неизвестно'} | 
-                            Создано: {new Date(post.created_at).toLocaleDateString('ru-RU', {
+                            Создано: {post.created_at ? new Date(post.created_at).toLocaleDateString('ru-RU', {
                                 year: 'numeric',
                                 month: 'long',
                                 day: 'numeric',
                                 hour: '2-digit',
                                 minute: '2-digit'
-                            })}
-                            {post.updated_at !== post.created_at && (
+                            }) : 'N/A'}
+                            {post.updated_at && post.updated_at !== post.created_at && (
                                 <span> | Обновлено: {new Date(post.updated_at).toLocaleDateString('ru-RU', {
                                     year: 'numeric',
                                     month: 'long',

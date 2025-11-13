@@ -48,9 +48,11 @@ const MyPosts: FC<PropsWithChildren<MyPostsProps>> = ({ posts }) => {
                                                 {post.content.substring(0, 100)}
                                                 {post.content.length > 100 && '...'}
                                             </p>
-                                            <div className="small text-muted mb-3">
-                                                {new Date(post.created_at).toLocaleDateString('ru-RU')}
-                                            </div>
+                                            {post.created_at && (
+                                                <div className="small text-muted mb-3">
+                                                    {new Date(post.created_at).toLocaleDateString('ru-RU')}
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="card-footer">
                                             <div className="d-flex gap-2">

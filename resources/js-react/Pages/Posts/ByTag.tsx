@@ -41,7 +41,7 @@ export default function ByTag({ posts, tag }: Props) {
                                         <div>
                                             <p className="font-medium text-gray-900">{post.user?.name}</p>
                                             <p className="text-sm text-gray-500">
-                                                {new Date(post.created_at).toLocaleDateString('ru-RU')}
+                                                {post.created_at ? new Date(post.created_at).toLocaleDateString('ru-RU') : 'N/A'}
                                             </p>
                                         </div>
                                     </div>

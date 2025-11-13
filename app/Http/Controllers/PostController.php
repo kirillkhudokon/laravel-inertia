@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use App\Models\Tag;
+use App\Data\PostData;
+use App\Data\TagData;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
@@ -80,26 +83,23 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'tags' => 'nullable|array',
-            'tags.*' => 'string|max:50'
-        ]);
+        $postData = PostData::validateAndCreate(
+            array_merge($request->all(), ['tags' => []])
+        );
 
-        $url = Str::slug($validated['title']);
+        $url = Str::slug($postData->title);
 
         $post = Post::create([
-            'title' => $validated['title'],
-            'content' => $validated['content'],
+            'title' => $postData->title,
+            'content' => $postData->content,
             'url' => $url,
             'user_id' => Auth::id(),
         ]);
 
         $post->update(['url' => $url . '-' . $post->id]);
 
-        if (!empty($validated['tags'])) {
-            $post->syncTags($validated['tags']);
+        if ($request->has('tags')) {
+            $post->syncTags($request->tags);
         }
 
         return redirect()->route('home')
@@ -155,26 +155,23 @@ class PostController extends Controller
             return Inertia::render('Errors/Forbidden');
         }
         
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'tags' => 'nullable|array',
-            'tags.*' => 'string|max:50'
-        ]);
+        $postData = PostData::validateAndCreate(
+            array_merge($request->all(), ['tags' => []])
+        );
 
-        if ($post->title !== $validated['title']) {
-            $url = Str::slug($validated['title']);
-            $validated['url'] = $url . '-' . $post->id;
+        if ($post->title !== $postData->title) {
+            $url = Str::slug($postData->title);
+            $urlToUpdate = $url . '-' . $post->id;
         }
 
         $post->update([
-            'title' => $validated['title'],
-            'content' => $validated['content'],
-            'url' => $validated['url'] ?? $post->url
+            'title' => $postData->title,
+            'content' => $postData->content,
+            'url' => $urlToUpdate ?? $post->url
         ]);
 
-        if (array_key_exists('tags', $validated)) {
-            $post->syncTags($validated['tags'] ?? []);
+        if ($request->has('tags')) {
+            $post->syncTags($request->tags);
         }
 
         return redirect()->route('home')

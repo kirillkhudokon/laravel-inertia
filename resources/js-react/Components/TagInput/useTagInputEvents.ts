@@ -6,7 +6,7 @@ export const useTagInputEvents = (
         addTag: (tags: string[], tag: string) => void;
         setActiveSuggestion: (index: number) => void;
         setShowSuggestions: (show: boolean) => void;
-        removeTag: (index: number) => void;
+        removeTag: (tags: string[], index: number) => void;
     },
 ) => {
     const eventEmitter = useMemo(() => new EventEmitter(), []);
@@ -37,7 +37,7 @@ export const useTagInputEvents = (
 
       eventEmitter.on('Backspace', (payload) => {
           if (payload.inputValue === '' && payload.tags.length > 0) {
-              setStateAPI.removeTag(payload.tags.length - 1);
+              setStateAPI.removeTag(payload.tags, payload.tags.length - 1);
           }
       });
 

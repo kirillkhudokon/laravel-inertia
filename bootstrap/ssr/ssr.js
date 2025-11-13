@@ -1,7 +1,8 @@
 import { jsx, jsxs, Fragment } from "react/jsx-runtime";
 import { Link as Link$1, usePage, router, useForm, createInertiaApp } from "@inertiajs/react";
 import classNames from "classnames";
-import { useState, useRef, useEffect } from "react";
+import { useMemo, useEffect, useState, useRef } from "react";
+import { debounce } from "lodash";
 import createServer from "@inertiajs/react/server";
 import { renderToString } from "react-dom/server";
 const Button = ({
@@ -179,6 +180,70 @@ const Card = ({
   );
   return /* @__PURE__ */ jsx("div", { className: cardClasses, ...props, children });
 };
+class EventEmitter {
+  events = /* @__PURE__ */ new Map();
+  on(event, listener) {
+    if (!this.events.has(event)) {
+      this.events.set(event, []);
+    }
+    this.events.get(event).push(listener);
+  }
+  off(event, listener) {
+    const listeners = this.events.get(event);
+    if (listeners) {
+      const index = listeners.indexOf(listener);
+      if (index > -1) {
+        listeners.splice(index, 1);
+      }
+    }
+  }
+  emit(event, ...args) {
+    const listeners = this.events.get(event);
+    if (listeners) {
+      listeners.forEach((listener) => listener(...args));
+    }
+  }
+  removeAllListeners(event) {
+    if (event) {
+      this.events.delete(event);
+    } else {
+      this.events.clear();
+    }
+  }
+}
+const useTagInputEvents = (setStateAPI) => {
+  const eventEmitter = useMemo(() => new EventEmitter(), []);
+  useEffect(() => {
+    eventEmitter.on("Enter", (payload) => {
+      if (payload.inputValue.trim()) {
+        if (payload.activeSuggestion >= 0 && payload.suggestions[payload.activeSuggestion]) {
+          setStateAPI.addTag(payload.tags, payload.suggestions[payload.activeSuggestion].name);
+        } else {
+          setStateAPI.addTag(payload.tags, payload.inputValue);
+        }
+      }
+    });
+    eventEmitter.on("ArrowDown", (payload) => {
+      setStateAPI.setActiveSuggestion(Math.min(payload.activeSuggestion + 1, payload.suggestions.length - 1));
+    });
+    eventEmitter.on("ArrowUp", (payload) => {
+      setStateAPI.setActiveSuggestion(Math.max(payload.activeSuggestion - 1, -1));
+    });
+    eventEmitter.on("Escape", () => {
+      setStateAPI.setShowSuggestions(false);
+      setStateAPI.setActiveSuggestion(-1);
+    });
+    eventEmitter.on("Backspace", (payload) => {
+      if (payload.inputValue === "" && payload.tags.length > 0) {
+        setStateAPI.removeTag(payload.tags.length - 1);
+      }
+    });
+    return () => {
+      eventEmitter.removeAllListeners();
+    };
+  }, []);
+  return eventEmitter;
+};
 const TagInput = ({
   tags = [],
   onChange,
@@ -192,32 +257,10 @@ const TagInput = ({
   const suggestionsRef = useRef(null);
   const { props } = usePage();
   const suggestions = props.tagSuggestions || [];
-  useEffect(() => {
-    if (inputValue.trim().length < 1) {
-      setShowSuggestions(false);
-      return;
-    }
-    const timeoutId = setTimeout(() => {
-      router.get(
-        window.location.pathname,
-        { tagQuery: inputValue },
-        {
-          only: ["tagSuggestions"],
-          // Загружаем только suggestions
-          preserveState: true,
-          preserveScroll: true,
-          onSuccess: () => {
-            setShowSuggestions(suggestions.length > 0);
-          }
-        }
-      );
-    }, 300);
-    return () => clearTimeout(timeoutId);
-  }, [inputValue]);
-  const addTag = (tagName) => {
+  const addTag = (tags2, tagName) => {
     const trimmedTag = tagName.trim();
-    if (trimmedTag && !tags.includes(trimmedTag)) {
-      onChange([...tags, trimmedTag]);
+    if (trimmedTag && !tags2.includes(trimmedTag)) {
+      onChange([...tags2, trimmedTag]);
     }
     setInputValue("");
     setShowSuggestions(false);
@@ -227,29 +270,55 @@ const TagInput = ({
     const newTags = tags.filter((_, i) => i !== index);
     onChange(newTags);
   };
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && inputValue.trim()) {
-      e.preventDefault();
-      if (activeSuggestion >= 0 && suggestions[activeSuggestion]) {
-        addTag(suggestions[activeSuggestion].name);
-      } else {
-        addTag(inputValue);
+  const eventEmitter = useTagInputEvents({
+    addTag,
+    setActiveSuggestion,
+    removeTag,
+    setShowSuggestions
+  });
+  const debouncedSearch = useMemo(
+    () => debounce((term) => {
+      if (term.trim() === "") {
+        return;
       }
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setActiveSuggestion(Math.min(activeSuggestion + 1, suggestions.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setActiveSuggestion(Math.max(activeSuggestion - 1, -1));
-    } else if (e.key === "Escape") {
+      router.get("/api/tags/search", { term }, {
+        only: ["tagSuggestions"],
+        preserveState: true,
+        replace: true,
+        preserveUrl: true
+      });
+    }, 300),
+    []
+  );
+  useEffect(() => {
+    if (inputValue.trim()) {
+      debouncedSearch(inputValue);
+      setShowSuggestions(true);
+    } else {
       setShowSuggestions(false);
-      setActiveSuggestion(-1);
-    } else if (e.key === "Backspace" && inputValue === "" && tags.length > 0) {
-      removeTag(tags.length - 1);
     }
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [inputValue, debouncedSearch]);
+  useEffect(() => {
+    if (suggestions.length > 0 && inputValue.trim()) {
+      setShowSuggestions(true);
+    }
+  }, [suggestions, inputValue]);
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+    }
+    eventEmitter.emit(e.key, {
+      inputValue,
+      activeSuggestion,
+      suggestions,
+      tags
+    });
   };
   const handleSuggestionClick = (suggestion) => {
-    addTag(suggestion.name);
+    addTag(tags, suggestion.name);
   };
   const containerClasses = classNames(
     "tag-input-container",
@@ -478,6 +547,80 @@ const __vite_glob_0_3 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.def
   __proto__: null,
   default: NotFound
 }, Symbol.toStringTag, { value: "Module" }));
+function ByTag({ posts, tag }) {
+  return /* @__PURE__ */ jsx(DefaultLayout, { children: /* @__PURE__ */ jsxs("div", { className: "max-w-4xl mx-auto py-8", children: [
+    /* @__PURE__ */ jsxs("div", { className: "mb-8", children: [
+      /* @__PURE__ */ jsxs("h1", { className: "text-3xl font-bold text-gray-900 mb-4", children: [
+        'Посты с тегом "#',
+        tag.name,
+        '"'
+      ] }),
+      /* @__PURE__ */ jsxs("p", { className: "text-gray-600", children: [
+        "Найдено постов: ",
+        posts.length
+      ] })
+    ] }),
+    posts.length > 0 ? /* @__PURE__ */ jsx("div", { className: "space-y-8", children: posts.map((post) => /* @__PURE__ */ jsxs("article", { className: "bg-white rounded-lg shadow-sm border border-gray-200 p-6", children: [
+      /* @__PURE__ */ jsx("div", { className: "flex items-center justify-between mb-4", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center space-x-3", children: [
+        /* @__PURE__ */ jsx("div", { className: "w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center", children: /* @__PURE__ */ jsx("span", { className: "text-blue-600 font-semibold", children: post.user?.name?.[0]?.toUpperCase() }) }),
+        /* @__PURE__ */ jsxs("div", { children: [
+          /* @__PURE__ */ jsx("p", { className: "font-medium text-gray-900", children: post.user?.name }),
+          /* @__PURE__ */ jsx("p", { className: "text-sm text-gray-500", children: new Date(post.created_at).toLocaleDateString("ru-RU") })
+        ] })
+      ] }) }),
+      /* @__PURE__ */ jsx("h2", { className: "text-xl font-semibold text-gray-900 mb-3", children: /* @__PURE__ */ jsx(
+        Link$1,
+        {
+          href: `/posts/${post.url}`,
+          className: "hover:text-blue-600 transition-colors",
+          children: post.title
+        }
+      ) }),
+      /* @__PURE__ */ jsx("p", { className: "text-gray-700 mb-4 line-clamp-3", children: post.content }),
+      post.tags && post.tags.length > 0 && /* @__PURE__ */ jsx("div", { className: "flex flex-wrap gap-2", children: post.tags.map((postTag) => /* @__PURE__ */ jsxs(
+        Link$1,
+        {
+          href: `/tags/${postTag.slug}`,
+          className: `
+                                                    inline-block px-3 py-1 text-sm rounded-full transition-colors
+                                                    ${postTag.id === tag.id ? "bg-blue-100 text-blue-800 font-medium" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}
+                                                `,
+          children: [
+            "#",
+            postTag.name
+          ]
+        },
+        postTag.id
+      )) })
+    ] }, post.id)) }) : /* @__PURE__ */ jsxs("div", { className: "text-center py-12", children: [
+      /* @__PURE__ */ jsxs("div", { className: "text-gray-500 text-lg mb-4", children: [
+        'Постов с тегом "#',
+        tag.name,
+        '" пока нет'
+      ] }),
+      /* @__PURE__ */ jsx(
+        Link$1,
+        {
+          href: "/",
+          className: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700",
+          children: "← Вернуться к постам"
+        }
+      )
+    ] }),
+    /* @__PURE__ */ jsx("div", { className: "mt-8 pt-8 border-t border-gray-200", children: /* @__PURE__ */ jsx(
+      Link$1,
+      {
+        href: "/",
+        className: "inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50",
+        children: "← Все посты"
+      }
+    ) })
+  ] }) });
+}
+const __vite_glob_0_4 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  default: ByTag
+}, Symbol.toStringTag, { value: "Module" }));
 function Create() {
   const { data, setData, post, processing, errors } = useForm({
     title: "",
@@ -544,7 +687,7 @@ function Create() {
     ] })
   ] }) });
 }
-const __vite_glob_0_4 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const __vite_glob_0_5 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   default: Create
 }, Symbol.toStringTag, { value: "Module" }));
@@ -614,7 +757,7 @@ const Edit = ({ post }) => {
     ] })
   ] }) });
 };
-const __vite_glob_0_5 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const __vite_glob_0_6 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   default: Edit
 }, Symbol.toStringTag, { value: "Module" }));
@@ -639,10 +782,18 @@ const Index = ({ posts }) => {
           " | Создано: ",
           new Date(post.created_at).toLocaleDateString("ru-RU")
         ] }),
-        post.tags && post.tags.length > 0 && /* @__PURE__ */ jsx("div", { className: "post-tags", children: post.tags.map((tag) => /* @__PURE__ */ jsxs("span", { className: "post-tag", children: [
-          "#",
-          tag.name
-        ] }, tag.id)) })
+        post.tags && post.tags.length > 0 && /* @__PURE__ */ jsx("div", { className: "post-tags", children: post.tags.map((tag) => /* @__PURE__ */ jsxs(
+          Link,
+          {
+            href: `/tags/${tag.slug}`,
+            className: "post-tag hover:bg-blue-100 transition-colors cursor-pointer",
+            children: [
+              "#",
+              tag.name
+            ]
+          },
+          tag.id
+        )) })
       ] }),
       auth.user && auth.user.id === post.user_id && /* @__PURE__ */ jsxs("div", { className: "post-actions", children: [
         /* @__PURE__ */ jsx(Link, { href: `/posts/${post.url}/edit`, children: /* @__PURE__ */ jsx(Button, { variant: "success", size: "small", children: "Изменить" }) }),
@@ -661,7 +812,7 @@ const Index = ({ posts }) => {
     ] }) }, post.id)) })
   ] }) });
 };
-const __vite_glob_0_6 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const __vite_glob_0_7 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   default: Index
 }, Symbol.toStringTag, { value: "Module" }));
@@ -720,7 +871,7 @@ const MyPosts = ({ posts }) => {
     ] }) }, post.id)) })
   ] }) }) });
 };
-const __vite_glob_0_7 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const __vite_glob_0_8 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   default: MyPosts
 }, Symbol.toStringTag, { value: "Module" }));
@@ -755,10 +906,18 @@ const Show = ({ post }) => {
         ] })
       ] }),
       /* @__PURE__ */ jsx("div", { className: "article-content", children: post.content.split("\n").map((paragraph, index) => /* @__PURE__ */ jsx("p", { children: paragraph }, index)) }),
-      post.tags && post.tags.length > 0 && /* @__PURE__ */ jsx("div", { className: "post-tags", children: post.tags.map((tag) => /* @__PURE__ */ jsxs("span", { className: "post-tag", children: [
-        "#",
-        tag.name
-      ] }, tag.id)) }),
+      post.tags && post.tags.length > 0 && /* @__PURE__ */ jsx("div", { className: "post-tags", children: post.tags.map((tag) => /* @__PURE__ */ jsxs(
+        Link,
+        {
+          href: `/tags/${tag.slug}`,
+          className: "post-tag hover:bg-blue-100 transition-colors cursor-pointer",
+          children: [
+            "#",
+            tag.name
+          ]
+        },
+        tag.id
+      )) }),
       auth.user && auth.user.id === post.user_id && /* @__PURE__ */ jsxs("div", { className: "article-actions", children: [
         /* @__PURE__ */ jsx(Link, { href: `/posts/${post.url}/edit`, children: /* @__PURE__ */ jsx(Button, { variant: "success", size: "small", children: "Редактировать" }) }),
         /* @__PURE__ */ jsx(
@@ -776,7 +935,7 @@ const Show = ({ post }) => {
     ] })
   ] }) });
 };
-const __vite_glob_0_8 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const __vite_glob_0_9 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   default: Show
 }, Symbol.toStringTag, { value: "Module" }));
@@ -785,7 +944,7 @@ createServer(
     page,
     render: renderToString,
     resolve: (name) => {
-      const pages = /* @__PURE__ */ Object.assign({ "./Pages/Auth/Login.tsx": __vite_glob_0_0, "./Pages/Auth/Register.tsx": __vite_glob_0_1, "./Pages/Errors/Forbidden.tsx": __vite_glob_0_2, "./Pages/Errors/NotFound.tsx": __vite_glob_0_3, "./Pages/Posts/Create.tsx": __vite_glob_0_4, "./Pages/Posts/Edit.tsx": __vite_glob_0_5, "./Pages/Posts/Index.tsx": __vite_glob_0_6, "./Pages/Posts/MyPosts.tsx": __vite_glob_0_7, "./Pages/Posts/Show.tsx": __vite_glob_0_8 });
+      const pages = /* @__PURE__ */ Object.assign({ "./Pages/Auth/Login.tsx": __vite_glob_0_0, "./Pages/Auth/Register.tsx": __vite_glob_0_1, "./Pages/Errors/Forbidden.tsx": __vite_glob_0_2, "./Pages/Errors/NotFound.tsx": __vite_glob_0_3, "./Pages/Posts/ByTag.tsx": __vite_glob_0_4, "./Pages/Posts/Create.tsx": __vite_glob_0_5, "./Pages/Posts/Edit.tsx": __vite_glob_0_6, "./Pages/Posts/Index.tsx": __vite_glob_0_7, "./Pages/Posts/MyPosts.tsx": __vite_glob_0_8, "./Pages/Posts/Show.tsx": __vite_glob_0_9 });
       return pages[`./Pages/${name}.tsx`];
     },
     setup({ App, props }) {
