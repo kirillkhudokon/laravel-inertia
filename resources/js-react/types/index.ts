@@ -1,31 +1,10 @@
-export interface User {
-  id: number;
-  name: string;
-  email: string;
-  email_verified_at?: string;
-  created_at: string;
-  updated_at: string;
-}
+// Import auto-generated types from Laravel Data
+import type { UserData, TagData, PostData } from './generated';
 
-export interface Tag {
-  id: number;
-  name: string;
-  slug: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Post {
-  id: number;
-  title: string;
-  content: string;
-  url: string;
-  user_id: number;
-  user?: User;
-  tags?: Tag[];
-  created_at: string;
-  updated_at: string;
-}
+// Re-export with convenient names
+export type User = UserData;
+export type Tag = TagData;
+export type Post = PostData;
 
 export interface Flash {
   success?: string;
@@ -44,7 +23,7 @@ export interface PageProps {
   errors?: Record<string, string>;
   tagSuggestions?: Tag[];
   tagQuery?: string;
-  [key: string]: any; // fix me
+  [key: string]: any;
 }
 
 export interface PostIndexProps extends PageProps {

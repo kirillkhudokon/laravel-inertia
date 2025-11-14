@@ -47,7 +47,7 @@ const TagInput: FC<TagInputProps> = ({
         setActiveSuggestion(-1);
     };
 
-    const removeTag = (index: number) => {
+    const removeTag = (tags: string[], index: number) => {
         const newTags = tags.filter((_, i) => i !== index);
         onChange(newTags);
     };
@@ -126,7 +126,7 @@ const TagInput: FC<TagInputProps> = ({
                             <button
                                 type="button"
                                 className="tag-remove"
-                                onClick={() => removeTag(index)}
+                                onClick={() => removeTag(tags, index)}
                                 aria-label={`Удалить тег ${tag}`}
                             >
                                 ×
