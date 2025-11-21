@@ -9,6 +9,14 @@ export type PostData = {
     created_at: string | null;
     updated_at: string | null;
 };
+export type PostFiltersData = {
+    search: string | null;
+    user_id: number | null;
+    created_at: string | null;
+    updated_at: string | null;
+    sort_by: string | null;
+    sort_order: string | null;
+};
 export type TagData = {
     id: number | null;
     name: string;

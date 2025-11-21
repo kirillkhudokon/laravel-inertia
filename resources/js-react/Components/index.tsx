@@ -7,3 +7,4 @@ export { default as Card } from './Card';
 export { TagInput } from './TagInput';
 export { default as Pagination } from './Pagination';
 export type { PaginationData, PaginationLink } from './Pagination';
+export { default as PostFilters } from './PostFilters';
