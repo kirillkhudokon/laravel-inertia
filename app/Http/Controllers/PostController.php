@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Post;
 use App\Models\Tag;
 use App\Data\PostData;
+use App\Data\CreatePostData;
 use App\Data\TagData;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
@@ -85,9 +85,7 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        $postData = PostData::validateAndCreate(
-            array_merge($request->all(), ['tags' => []])
-        );
+        $postData = CreatePostData::validateAndCreate($request->all());
 
         $url = Str::slug($postData->title);
 
@@ -100,8 +98,8 @@ class PostController extends Controller
 
         $post->update(['url' => $url . '-' . $post->id]);
 
-        if ($request->has('tags')) {
-            $post->syncTags($request->tags);
+        if ($postData->tags !== null) {
+            $post->syncTags($postData->tags);
         }
 
         return redirect()->route('home')
@@ -157,9 +155,7 @@ class PostController extends Controller
             return Inertia::render('Errors/Forbidden');
         }
         
-        $postData = PostData::validateAndCreate(
-            array_merge($request->all(), ['tags' => []])
-        );
+        $postData = CreatePostData::validateAndCreate($request->all());
 
         if ($post->title !== $postData->title) {
             $url = Str::slug($postData->title);
@@ -172,8 +168,8 @@ class PostController extends Controller
             'url' => $urlToUpdate ?? $post->url
         ]);
 
-        if ($request->has('tags')) {
-            $post->syncTags($request->tags);
+        if ($postData->tags !== null) {
+            $post->syncTags($postData->tags);
         }
 
         return redirect()->route('home')

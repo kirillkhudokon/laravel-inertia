@@ -3,36 +3,25 @@
 namespace App\Data;
 
 use App\Models\Post;
-use Spatie\LaravelData\Attributes\Validation\Max;
-use Spatie\LaravelData\Attributes\Validation\Required;
-use Spatie\LaravelData\Attributes\Validation\StringType;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
-use Spatie\LaravelData\Optional;
 
 #[TypeScript]
 class PostData extends Data
 {
     public function __construct(
-        public int|Optional $id,
-        
-        #[Required, StringType, Max(255)]
+        public int $id,
         public string $title,
-        
-        #[Required, StringType]
         public string $content,
-        
-        public string|Optional $url,
-        
-        public int|Optional $user_id,
+        public string $url,
+        public int $user_id,
         
         /** @var TagData[] */
-        public array|Optional $tags,
+        public array $tags,
         
-        public UserData|Optional $user,
-        
-        public string|Optional $created_at,
-        public string|Optional $updated_at,
+        public ?UserData $user,
+        public ?string $created_at,
+        public ?string $updated_at,
     ) {}
     
     public static function fromModel(Post $post): self
@@ -44,7 +33,7 @@ class PostData extends Data
             url: $post->url,
             user_id: $post->user_id,
             tags: $post->tags,
-            user: $post->user ? $post->user : Optional::create(),
+            user: $post->user ? UserData::from($post->user) : null,
             created_at: $post->created_at?->toISOString(),
             updated_at: $post->updated_at?->toISOString(),
         );

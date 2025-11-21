@@ -1,13 +1,13 @@
 export type PostData = {
-    id?: number;
+    id: number;
     title: string;
     content: string;
-    url?: string;
-    user_id?: number;
-    tags?: Array<TagData>;
-    user?: UserData;
-    created_at?: string;
-    updated_at?: string;
+    url: string;
+    user_id: number;
+    tags: Array<TagData>;
+    user: UserData | null;
+    created_at: string | null;
+    updated_at: string | null;
 };
 export type TagData = {
     id: number | null;
