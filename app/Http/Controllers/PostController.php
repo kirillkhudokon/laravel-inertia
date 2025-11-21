@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use App\Models\Tag;
+use App\Data\PostData;
+use App\Data\CreatePostData;
+use App\Data\TagData;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
@@ -16,8 +19,10 @@ class PostController extends Controller
      */
     public function index()
     {
-        $posts = Post::with(['user', 'tags'])->latest()->get();
-        
+        $posts = Post::with(['user', 'tags'])
+            ->latest()
+            ->paginate(10);
+
         return Inertia::render('Posts/Index', [
             'posts' => $posts
         ]);
@@ -31,7 +36,7 @@ class PostController extends Controller
         $tag = Tag::where('slug', $tagSlug)->firstOrFail();
         $posts = Post::whereHas('tags', function ($query) use ($tag) {
             $query->where('tags.id', $tag->id);
-        })->with(['user', 'tags'])->latest()->get();
+        })->with(['user', 'tags'])->latest()->paginate(10);
         
         return Inertia::render('Posts/ByTag', [
             'posts' => $posts,
@@ -47,7 +52,7 @@ class PostController extends Controller
         $posts = Post::where('user_id', Auth::id())
             ->with(['user', 'tags'])
             ->latest()
-            ->get();
+            ->paginate(10);
         
         return Inertia::render('Posts/MyPosts', [
             'posts' => $posts
@@ -80,26 +85,21 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'tags' => 'nullable|array',
-            'tags.*' => 'string|max:50'
-        ]);
+        $postData = CreatePostData::validateAndCreate($request->all());
 
-        $url = Str::slug($validated['title']);
+        $url = Str::slug($postData->title);
 
         $post = Post::create([
-            'title' => $validated['title'],
-            'content' => $validated['content'],
+            'title' => $postData->title,
+            'content' => $postData->content,
             'url' => $url,
             'user_id' => Auth::id(),
         ]);
 
         $post->update(['url' => $url . '-' . $post->id]);
 
-        if (!empty($validated['tags'])) {
-            $post->syncTags($validated['tags']);
+        if ($postData->tags !== null) {
+            $post->syncTags($postData->tags);
         }
 
         return redirect()->route('home')
@@ -155,26 +155,21 @@ class PostController extends Controller
             return Inertia::render('Errors/Forbidden');
         }
         
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'tags' => 'nullable|array',
-            'tags.*' => 'string|max:50'
-        ]);
+        $postData = CreatePostData::validateAndCreate($request->all());
 
-        if ($post->title !== $validated['title']) {
-            $url = Str::slug($validated['title']);
-            $validated['url'] = $url . '-' . $post->id;
+        if ($post->title !== $postData->title) {
+            $url = Str::slug($postData->title);
+            $urlToUpdate = $url . '-' . $post->id;
         }
 
         $post->update([
-            'title' => $validated['title'],
-            'content' => $validated['content'],
-            'url' => $validated['url'] ?? $post->url
+            'title' => $postData->title,
+            'content' => $postData->content,
+            'url' => $urlToUpdate ?? $post->url
         ]);
 
-        if (array_key_exists('tags', $validated)) {
-            $post->syncTags($validated['tags'] ?? []);
+        if ($postData->tags !== null) {
+            $post->syncTags($postData->tags);
         }
 
         return redirect()->route('home')
