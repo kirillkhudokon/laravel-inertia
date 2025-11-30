@@ -33,12 +33,18 @@ class PostController extends Controller
             $query->where('user_id', $request->user_id);
         }
 
-        if ($request->filled('created_at')) {
-            $query->whereDate('created_at', $request->created_at);
+        if ($request->filled('created_from')) {
+            $query->whereDate('created_at', '>=', $request->created_from);
+        }
+        if ($request->filled('created_to')) {
+            $query->whereDate('created_at', '<=', $request->created_to);
         }
 
-        if ($request->filled('updated_at')) {
-            $query->whereDate('updated_at', $request->updated_at);
+        if ($request->filled('updated_from')) {
+            $query->whereDate('updated_at', '>=', $request->updated_from);
+        }
+        if ($request->filled('updated_to')) {
+            $query->whereDate('updated_at', '<=', $request->updated_to);
         }
 
         $sortBy = $request->input('sort_by', 'created_at');
@@ -55,8 +61,10 @@ class PostController extends Controller
             'filters' => PostFiltersData::from([
                 'search' => $request->search,
                 'user_id' => $request->user_id,
-                'created_at' => $request->created_at,
-                'updated_at' => $request->updated_at,
+                'created_from' => $request->created_from,
+                'created_to' => $request->created_to,
+                'updated_from' => $request->updated_from,
+                'updated_to' => $request->updated_to,
                 'sort_by' => $sortBy,
                 'sort_order' => $sortOrder,
             ])

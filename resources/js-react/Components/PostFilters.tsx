@@ -1,7 +1,8 @@
-import { router } from '@inertiajs/react';
-import { FC, FormEvent, useState } from 'react';
-import { Input, Button } from '../Components';
+import { FC, useRef, useState } from 'react';
+import { Input, Button, DateRangeFilter, DateRangeFilterRef } from '../Components';
 import { User, PostFiltersData } from '@/types';
+import { useSortFilter } from '../hooks/useSortFilter';
+import { useFiltersWatch } from '../hooks/useFiltersWatch';
 
 interface PostFiltersProps {
     filters: PostFiltersData;
@@ -9,48 +10,71 @@ interface PostFiltersProps {
 }
 
 const PostFilters: FC<PostFiltersProps> = ({ filters, users }) => {
-    const [localFilters, setLocalFilters] = useState<PostFiltersData>(filters);
-
-    const handleFilterChange = (key: keyof PostFiltersData, value: string | number | undefined) => {
-        setLocalFilters((prev: PostFiltersData) => ({ ...prev, [key]: value || null }));
-    };
+    const [search, setSearch] = useState(filters.search ?? '');
+    const { localFilters, setLocalFilters, debouncedSetLocalFilters } = useFiltersWatch<PostFiltersData>({
+        initialFilters: filters,
+    });
     
-    const getCleanedFilters = (filters: PostFiltersData) => {
-      return Object.fromEntries(
-          Object.entries(filters).filter(([_, value]) => value !== undefined && value !== null)
-      );
-    }
+    const createdDateRef = useRef<DateRangeFilterRef>(null);
+    const updatedDateRef = useRef<DateRangeFilterRef>(null);
+    
+    const sortFilter = useSortFilter<'created_at' | 'updated_at'>(
+        filters.sort_by as 'created_at' | 'updated_at',
+        filters.sort_order as 'asc' | 'desc'
+    );
 
-    const applyFilters = (e: FormEvent) => {
-        e.preventDefault();
-        const cleanFilters = getCleanedFilters(localFilters);
-        router.get('/', cleanFilters, {
-            preserveState: true,
-            preserveScroll: true,
-        });
+    const handleSearchChange = (value: string) => {
+        setSearch(value);
+        debouncedSetLocalFilters({ ...localFilters, search: value });
+    };
+
+    const handleFilterChange = (key: keyof PostFiltersData, value: string | number | null) => {
+        setLocalFilters((prev: PostFiltersData) => ({ ...prev, [key]: value }));
+    };
+
+    const handleCreatedDateChange = (from: string | null, to: string | null) => {
+        setLocalFilters((prev: PostFiltersData) => ({
+            ...prev,
+            created_from: from,
+            created_to: to,
+        }));
+    };
+
+    const handleUpdatedDateChange = (from: string | null, to: string | null) => {
+        setLocalFilters((prev: PostFiltersData) => ({
+            ...prev,
+            updated_from: from,
+            updated_to: to,
+        }));
+    };
+
+    const handleSort = (field: 'created_at' | 'updated_at') => {
+        sortFilter.handleSort(field);
+        const newOrder = sortFilter.sortBy === field && sortFilter.sortOrder === 'desc' ? 'asc' : 'desc';
+        
+        setLocalFilters((prev: PostFiltersData) => ({ 
+            ...prev, 
+            sort_by: field, 
+            sort_order: newOrder
+        }));
     };
 
     const resetFilters = () => {
         const emptyFilters: PostFiltersData = {
             search: null,
             user_id: null,
-            created_at: null,
-            updated_at: null,
+            created_from: null,
+            created_to: null,
+            updated_from: null,
+            updated_to: null,
             sort_by: 'created_at',
             sort_order: 'desc',
         };
-        setLocalFilters(emptyFilters);
         
-        const cleanFilters = getCleanedFilters(emptyFilters);
-        router.get('/', cleanFilters, {
-            preserveState: true,
-            preserveScroll: true,
-        });
-    };
-
-    const handleSort = (field: 'created_at' | 'updated_at') => {
-        const newOrder = localFilters.sort_by === field && localFilters.sort_order === 'desc' ? 'asc' : 'desc';
-        setLocalFilters((prev: PostFiltersData) => ({ ...prev, sort_by: field, sort_order: newOrder }));
+        setLocalFilters(emptyFilters);
+        createdDateRef.current?.reset();
+        updatedDateRef.current?.reset();
+        sortFilter.reset('created_at', 'desc');
     };
 
     return (
@@ -59,14 +83,14 @@ const PostFilters: FC<PostFiltersProps> = ({ filters, users }) => {
                 <h3>Фильтры и сортировка</h3>
             </div>
 
-            <form onSubmit={applyFilters} className="filters-form">
+            <div className="filters-form">
                 <div className="filters-grid">
                     <div className="filter-group">
                         <label>Поиск по названию</label>
                         <Input
                             type="text"
-                            value={localFilters.search || ''}
-                            onChange={(e) => handleFilterChange('search', e.target.value)}
+                            value={search}
+                            onChange={(e) => handleSearchChange(e.target.value ?? '')}
                             placeholder="Введите название..."
                         />
                     </div>
@@ -75,7 +99,7 @@ const PostFilters: FC<PostFiltersProps> = ({ filters, users }) => {
                         <label>Автор</label>
                         <select
                             value={localFilters.user_id || ''}
-                            onChange={(e) => handleFilterChange('user_id', e.target.value ? Number(e.target.value) : undefined)}
+                            onChange={(e) => handleFilterChange('user_id', e.target.value ? Number(e.target.value) : null)}
                             className="filter-select"
                         >
                             <option value="">Все авторы</option>
@@ -88,51 +112,53 @@ const PostFilters: FC<PostFiltersProps> = ({ filters, users }) => {
                     </div>
 
                     <div className="filter-group">
-                        <label>Дата создания</label>
-                        <Input
-                            type="date"
-                            value={localFilters.created_at || ''}
-                            onChange={(e) => handleFilterChange('created_at', e.target.value)}
+                        <label>Период создания</label>
+                        <DateRangeFilter
+                            ref={createdDateRef}
+                            initialFrom={filters.created_from}
+                            initialTo={filters.created_to}
+                            onChange={handleCreatedDateChange}
+                            placeholder="Выберите период"
                         />
                     </div>
 
                     <div className="filter-group">
-                        <label>Дата обновления</label>
-                        <Input
-                            type="date"
-                            value={localFilters.updated_at || ''}
-                            onChange={(e) => handleFilterChange('updated_at', e.target.value)}
+                        <label>Период обновления</label>
+                        <DateRangeFilter
+                            ref={updatedDateRef}
+                            initialFrom={filters.updated_from}
+                            initialTo={filters.updated_to}
+                            onChange={handleUpdatedDateChange}
+                            placeholder="Выберите период"
                         />
                     </div>
                 </div>
 
+                {/* Сортировка */}
                 <div className="sort-buttons">
                     <label>Сортировка:</label>
                     <Button
                         type="button"
-                        variant={localFilters.sort_by === 'created_at' ? 'primary' : 'secondary'}
+                        variant={sortFilter.sortBy === 'created_at' ? 'primary' : 'secondary'}
                         onClick={() => handleSort('created_at')}
                     >
-                        По дате создания {localFilters.sort_by === 'created_at' && (localFilters.sort_order === 'desc' ? '↓' : '↑')}
+                        По дате создания {sortFilter.sortBy === 'created_at' && (sortFilter.sortOrder === 'desc' ? '↓' : '↑')}
                     </Button>
                     <Button
                         type="button"
-                        variant={localFilters.sort_by === 'updated_at' ? 'primary' : 'secondary'}
+                        variant={sortFilter.sortBy === 'updated_at' ? 'primary' : 'secondary'}
                         onClick={() => handleSort('updated_at')}
                     >
-                        По дате обновления {localFilters.sort_by === 'updated_at' && (localFilters.sort_order === 'desc' ? '↓' : '↑')}
+                        По дате обновления {sortFilter.sortBy === 'updated_at' && (sortFilter.sortOrder === 'desc' ? '↓' : '↑')}
                     </Button>
                 </div>
 
                 <div className="filter-actions">
-                    <Button type="submit" variant="primary">
-                        Применить
-                    </Button>
                     <Button type="button" variant="secondary" onClick={resetFilters}>
-                        Сбросить
+                        Сбросить фильтры
                     </Button>
                 </div>
-            </form>
+            </div>
         </div>
     );
 };

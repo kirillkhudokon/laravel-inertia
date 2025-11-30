@@ -8,3 +8,6 @@ export { TagInput } from './TagInput';
 export { default as Pagination } from './Pagination';
 export type { PaginationData, PaginationLink } from './Pagination';
 export { default as PostFilters } from './PostFilters';
+export { DateRangePicker } from './DateRangePicker';
+export { DateRangeFilter } from './DateRangeFilter';
+export type { DateRangeFilterRef } from './DateRangeFilter';
