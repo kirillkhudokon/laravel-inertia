@@ -4,9 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use App\Models\Tag;
+use App\Models\User;
 use App\Data\PostData;
 use App\Data\CreatePostData;
+use App\Data\PostFiltersData;
 use App\Data\TagData;
+use App\Data\UserData;
+use App\Http\Requests\PostFilterRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
@@ -17,14 +21,45 @@ class PostController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(PostFilterRequest $request)
     {
-        $posts = Post::with(['user', 'tags'])
-            ->latest()
-            ->paginate(10);
+        $query = Post::with(['user', 'tags']);
+
+        if ($request->filled('search')) {
+            $query->where('title', 'LIKE', '%' . $request->search . '%');
+        }
+
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        if ($request->filled('created_at')) {
+            $query->whereDate('created_at', $request->created_at);
+        }
+
+        if ($request->filled('updated_at')) {
+            $query->whereDate('updated_at', $request->updated_at);
+        }
+
+        $sortBy = $request->input('sort_by', 'created_at');
+        $sortOrder = $request->input('sort_order', 'desc');
+        $query->orderBy($sortBy, $sortOrder);
+
+        $posts = $query->paginate(10)->withQueryString();
+
+        $users = User::all();
 
         return Inertia::render('Posts/Index', [
-            'posts' => $posts
+            'posts' => $posts,
+            'users' => $users,
+            'filters' => PostFiltersData::from([
+                'search' => $request->search,
+                'user_id' => $request->user_id,
+                'created_at' => $request->created_at,
+                'updated_at' => $request->updated_at,
+                'sort_by' => $sortBy,
+                'sort_order' => $sortOrder,
+            ])
         ]);
     }
 

@@ -1,14 +1,16 @@
 import { usePage } from '@inertiajs/react';
 import DefaultLayout from '../../Layouts/DefaultLayout';
-import { Button, Link, Alert, Card, Pagination, PaginationData } from '../../Components';
+import { Button, Link, Alert, Card, Pagination, PaginationData, PostFilters } from '../../Components';
 import { FC, PropsWithChildren } from 'react';
-import { PageProps, Post } from '@/types';
+import { PageProps, Post, User, PostFiltersData } from '@/types';
 
 interface IndexProps {
-    posts: PaginationData<Post>
+    posts: PaginationData<Post>;
+    users: User[];
+    filters: PostFiltersData;
 }
 
-const Index: FC<PropsWithChildren<IndexProps>> = ({ posts }) => {
+const Index: FC<PropsWithChildren<IndexProps>> = ({ posts, users, filters }) => {
     const { flash, auth } = usePage<PageProps>().props;
 
     return (
@@ -28,6 +30,8 @@ const Index: FC<PropsWithChildren<IndexProps>> = ({ posts }) => {
                         {flash.success}
                     </Alert>
                 )}
+
+                <PostFilters filters={filters} users={users} />
 
                 {posts.data.length === 0 ? (
                     <div className="empty-state">

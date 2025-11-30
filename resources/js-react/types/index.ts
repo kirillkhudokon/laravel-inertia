@@ -1,10 +1,12 @@
 // Import auto-generated types from Laravel Data
-import type { UserData, TagData, PostData } from './generated';
+import type { UserData, TagData, PostData, PostFiltersData } from './generated';
 
 // Re-export with convenient names
 export type User = UserData;
 export type Tag = TagData;
 export type Post = PostData;
+export type PostFilters = PostFiltersData;
+export type { PostFiltersData };
 
 export interface Flash {
   success?: string;
