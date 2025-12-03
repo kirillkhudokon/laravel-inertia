@@ -1,9 +1,12 @@
 import { useForm } from '@inertiajs/react';
 import DefaultLayout from '../../Layouts/DefaultLayout';
-import { Input, Button, Card } from '../../Components';
 import { FormEventHandler } from 'react';
+import { useUIComponents } from '@/contexts/UIContext';
 
 export default function Register() {
+    const components = useUIComponents();
+    const { Input, Button, Card } = components;
+    
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         email: '',
@@ -85,5 +88,5 @@ export default function Register() {
                 </div>
             </div>
         </DefaultLayout>
-    );
+    )
 }

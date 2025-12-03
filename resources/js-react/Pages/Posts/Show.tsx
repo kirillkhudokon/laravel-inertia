@@ -1,8 +1,8 @@
 import DefaultLayout from '../../Layouts/DefaultLayout';
-import { Button, Link } from '../../Components';
-import { usePage } from '@inertiajs/react';
+import { usePage, Link as InertiaLink } from '@inertiajs/react';
 import { PageProps, Post } from '@/types';
 import { FC, PropsWithChildren } from 'react';
+import { useUIComponents } from '@/contexts/UIContext';
 
 interface ShowProps {
     post: Post
@@ -10,21 +10,24 @@ interface ShowProps {
 
 const Show: FC<PropsWithChildren<ShowProps>> = ({ post }) => {
     const { auth } = usePage<PageProps>().props;
+    const components = useUIComponents();
+    const { Button, Link } = components;
+    
     return (
         <DefaultLayout>
-            <div className="content container-small">
-                <div className="mb-4">
-                    <Link href="/">
-                        Назад к постам
+            <div className="container mx-auto px-6 py-8 max-w-4xl">
+                <div className="mb-6">
+                    <Link href="/" className="text-primary hover:underline">
+                        ← Назад к постам
                     </Link>
                 </div>
 
-                <article className="article">
-                    <header className="article-header">
-                        <h1 className="article-title">
+                <article className="bg-card border border-border rounded-lg p-8 shadow-sm">
+                    <header className="mb-8 pb-6 border-b border-border">
+                        <h1 className="text-4xl font-bold mb-4">
                             {post.title}
                         </h1>
-                        <div className="article-meta">
+                        <div className="text-sm text-muted-foreground">
                             Автор: {post.user?.name || 'Неизвестно'} | 
                             Создано: {post.created_at ? new Date(post.created_at).toLocaleDateString('ru-RU', {
                                 year: 'numeric',
@@ -45,21 +48,21 @@ const Show: FC<PropsWithChildren<ShowProps>> = ({ post }) => {
                         </div>
                     </header>
 
-                    <div className="article-content">
+                    <div className="prose prose-slate max-w-none mb-6">
                         {post.content.split('\n').map((paragraph, index) => (
-                            <p key={index}>
+                            <p key={index} className="mb-4 leading-relaxed">
                                 {paragraph}
                             </p>
                         ))}
                     </div>
 
                     {post.tags && post.tags.length > 0 && (
-                        <div className="post-tags">
+                        <div className="flex flex-wrap gap-2 mt-4">
                             {post.tags.map(tag => (
                                 <Link 
                                     key={tag.id} 
                                     href={`/tags/${tag.slug}`}
-                                    className="post-tag hover:bg-blue-100 transition-colors cursor-pointer"
+                                    className="inline-block bg-secondary text-secondary-foreground px-3 py-1 rounded-md text-sm no-underline hover:bg-secondary/80 transition-colors cursor-pointer"
                                 >
                                     #{tag.name}
                                 </Link>
@@ -68,22 +71,22 @@ const Show: FC<PropsWithChildren<ShowProps>> = ({ post }) => {
                     )}
 
                     {auth.user && auth.user.id === post.user_id && (
-                        <div className="article-actions">
+                        <div className="flex gap-3 pt-6 border-t border-border mt-6">
                             <Link href={`/posts/${post.url}/edit`}>
                                   <Button variant="success" size="small">
                                     Редактировать
                                 </Button>
                             </Link>
                             
-                            <Link 
+                            <InertiaLink 
                                 href={`/posts/${post.url}`}
                                 method="delete"
                                 as="button"
                                 onBefore={() => confirm('Вы уверены, что хотите удалить этот пост?')}
-                                className="btn-danger btn-small"
+                                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 h-8 px-3 text-xs"
                             >
                                 Удалить
-                            </Link>
+                            </InertiaLink>
                         </div>
                     )}
                 </article>

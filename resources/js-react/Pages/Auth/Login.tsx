@@ -1,9 +1,12 @@
 import { useForm } from '@inertiajs/react';
 import DefaultLayout from '../../Layouts/DefaultLayout';
-import { Input, Button, Card, Alert } from '../../Components';
 import { FormEventHandler } from 'react';
+import { useUIComponents } from '@/contexts/UIContext';
 
 export default function Login() {
+    const components = useUIComponents();
+    const { Input, Button, Card, Alert } = components;
+    
     const { data, setData, post, processing, errors } = useForm({
         email: '',
         password: '',
@@ -33,34 +36,34 @@ export default function Login() {
                                             value={data.email}
                                             onChange={(e) => setData('email', e.target.value)}
                                             required
-                                        />
-                                    </div>
+                                            />
+                                        </div>
+                                        
+                                        <div className="mb-3">
+                                            <Input
+                                                type="password"
+                                                placeholder="Пароль"
+                                                value={data.password}
+                                                onChange={(e) => setData('password', e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                        
+                                        <Button type="submit" disabled={processing} className="w-100">
+                                            {processing ? 'Вход...' : 'Войти'}
+                                        </Button>
+                                    </form>
                                     
-                                    <div className="mb-3">
-                                        <Input
-                                            type="password"
-                                            placeholder="Пароль"
-                                            value={data.password}
-                                            onChange={(e) => setData('password', e.target.value)}
-                                            required
-                                        />
+                                    <div className="text-center mt-3">
+                                        <p>
+                                            Нет аккаунта? <a href="/register">Зарегистрируйтесь</a>
+                                        </p>
                                     </div>
-                                    
-                                    <Button type="submit" disabled={processing} className="w-100">
-                                        {processing ? 'Вход...' : 'Войти'}
-                                    </Button>
-                                </form>
-                                
-                                <div className="text-center mt-3">
-                                    <p>
-                                        Нет аккаунта? <a href="/register">Зарегистрируйтесь</a>
-                                    </p>
-                                </div>
-                            </Card>
+                                </Card>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
         </DefaultLayout>
     );
 }

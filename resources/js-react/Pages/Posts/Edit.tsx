@@ -1,14 +1,18 @@
-import { useForm } from '@inertiajs/react';
+import { useForm, router, usePage } from '@inertiajs/react';
 import DefaultLayout from '../../Layouts/DefaultLayout';
-import { Button, Link, Input, TextArea, TagInput } from '../../Components';
-import { FC, FormEventHandler, PropsWithChildren } from 'react';
-import { Post } from '@/types';
+import { FC, FormEventHandler, PropsWithChildren, useMemo } from 'react';
+import { Post, PageProps } from '@/types';
+import { useUIComponents } from '@/contexts/UIContext';
 
 interface EditProps {
     post: Post 
 }
 
 const Edit: FC<PropsWithChildren<EditProps>> = ({ post }) => {
+    const components = useUIComponents();
+    const { tagSuggestions } = usePage<PageProps>().props;
+    const { Button, Link, Input, TextArea, TagInput } = components;
+    
     const { data, setData, put, processing, errors } = useForm({
         title: post.title,
         content: post.content,
@@ -20,18 +24,31 @@ const Edit: FC<PropsWithChildren<EditProps>> = ({ post }) => {
         put(`/posts/${post.url}`);
     };
 
+    const onSearch = (term: string) => {
+        router.get('/api/tags/search', { term }, {
+            only: ['tagSuggestions'],
+            preserveState: true,
+            replace: true,
+            preserveUrl: true
+        });
+    }
+
+    const suggestions = useMemo(() => {
+        return tagSuggestions?.map(tag => ({ id: tag.id!, name: tag.name }) ) || []
+    }, [tagSuggestions])
+
     return (
         <DefaultLayout>
-            <div className="content container-small">
-                <div className="mb-4">
-                    <Link href="/">
-                        Назад к постам
+            <div className="container mx-auto px-6 py-8 max-w-4xl">
+                <div className="mb-6">
+                    <Link href="/" className="text-primary hover:underline">
+                        ← Назад к постам
                     </Link>
                 </div>
 
-                <h1>Редактировать пост</h1>
+                <h1 className="text-3xl font-bold mb-6">Редактировать пост</h1>
 
-                <form onSubmit={handleSubmit} className="mt-4">
+                <form onSubmit={handleSubmit} className="space-y-6 bg-card border border-border rounded-lg p-6">
                     <Input
                         id="title"
                         label="Заголовок"
@@ -46,28 +63,30 @@ const Edit: FC<PropsWithChildren<EditProps>> = ({ post }) => {
                         id="content"
                         label="Содержание"
                         value={data.content}
-                        onChange={(e) => setData('content', e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setData('content', e.target.value)}
                         rows={10}
                         placeholder="Введите содержание поста"
                         error={errors.content}
                         required
                     />
 
-                    <div className="form-group">
-                        <label className="form-label">Теги</label>
+                    <div className="space-y-2">
+                        <label className="block text-sm font-medium">Теги</label>
                         <TagInput
                             tags={data.tags}
-                            onChange={(tags) => setData('tags', tags)}
+                            onChange={(tags: string[]) => setData('tags', tags)}
                             placeholder="Добавьте теги (например: #programming, #react)..."
+                            onSearch={onSearch}
+                            suggestions={suggestions || []}
                         />
                         {errors.tags && (
-                            <div className="error-message">
+                            <div className="text-sm text-destructive mt-1">
                                 {errors.tags}
                             </div>
                         )}
                     </div>
 
-                    <div className="form-actions">
+                    <div className="flex gap-3 pt-4">
                         <Button
                             type="submit"
                             variant="success"
@@ -83,7 +102,7 @@ const Edit: FC<PropsWithChildren<EditProps>> = ({ post }) => {
                         </Link>
                     </div>
                 </form>
-            </div>
+                </div>
         </DefaultLayout>
     );
 }

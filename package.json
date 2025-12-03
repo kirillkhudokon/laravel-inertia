@@ -8,6 +8,7 @@
         "generate:types": "php artisan typescript:transform"
     },
     "devDependencies": {
+        "@originjs/vite-plugin-federation": "^1.4.1",
         "@types/lodash": "^4.17.20",
         "@types/react": "^19.2.3",
         "@types/react-dom": "^19.2.2",
