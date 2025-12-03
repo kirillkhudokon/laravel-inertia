@@ -1,7 +1,9 @@
 import { createInertiaApp } from '@inertiajs/react';
 import { createRoot } from 'react-dom/client';
+import { Suspense } from 'react';
 import initHttp from './http';
 import { HttpContext } from './contexts/HttpContext';
+import { UIProvider } from './contexts/UIContext';
 
 createInertiaApp({
   resolve: (name: string) => {
@@ -21,7 +23,11 @@ createInertiaApp({
     
     createRoot(el).render(
       <HttpContext.Provider value={http}>
-        <App {...props} />
+          <UIProvider>
+            <Suspense fallback={<></>}>
+              <App {...props} />
+            </Suspense>
+          </UIProvider>
       </HttpContext.Provider>
     );
   },

@@ -20,7 +20,9 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/*": ["resources/js-react/*"]
+      "@/*": ["resources/js-react/*"],
+      "@ui/components": ["packages/ui/src/index.ts"],
+      "@ui/components/*": ["packages/ui/src/*"]
     },
 
     "typeRoots": ["./node_modules/@types", "./resources/js-react/types"]

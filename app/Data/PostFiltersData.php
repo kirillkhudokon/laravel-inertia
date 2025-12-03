@@ -11,8 +11,10 @@ class PostFiltersData extends Data
     public function __construct(
         public ?string $search,
         public ?int $user_id,
-        public ?string $created_at,
-        public ?string $updated_at,
+        public ?string $created_from,
+        public ?string $created_to,
+        public ?string $updated_from,
+        public ?string $updated_to,
         public ?string $sort_by,
         public ?string $sort_order,
     ) {

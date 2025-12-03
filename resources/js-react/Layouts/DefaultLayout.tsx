@@ -1,68 +1,87 @@
 import { FC, PropsWithChildren } from 'react';
-import { Link } from '../Components';
-import { usePage } from '@inertiajs/react';
+import { usePage, Link as InertiaLink } from '@inertiajs/react';
 import type { PageProps } from '../types';
 import '../../css/app.css';
+import { useUIComponents } from '@/contexts/UIContext';
 
 const DefaultLayout: FC<PropsWithChildren> = ({ children }) => {
     const { auth } = usePage<PageProps>().props;
+    const components = useUIComponents();
+    const { Link } = components;
 
     return (
-        <div className="app-layout">
-            <div className="topbar">
-                <div className="d-flex justify-content-between align-items-center pl-5 pr-5">
-                    <h2 className="mb-0 mt-0 text-white">Blog</h2>
-                    {auth.user ? (
-                        <div className="d-flex align-items-center gap-3">
-                            <span className="text-white">Привет, {auth.user.name}!</span>
-                            <Link href="/logout" method="post" variant="button">
-                                Выйти
-                            </Link>
-                        </div>
-                    ) : (
-                        <div className="d-flex gap-2">
-                            <Link href="/login" variant="button">
-                                Войти
-                            </Link>
-                            <Link href="/register" variant="button">
-                                Регистрация
-                            </Link>
-                        </div>
-                    )}
-                </div>
-            </div>
+        <div className="min-h-screen flex flex-col bg-background">
 
-            <div className="app-content">
-                <div className="sidebar">
-                    <nav className="sidebar-nav">
-                        <Link href="/" className="sidebar-link">
-                            Все посты
-                        </Link>
-                        
-                        {auth.user && (
-                            <>
-                                <Link href="/my-posts" className="sidebar-link">
-                                    Мои посты
-                                </Link>
-                                <Link href="/posts/create" className="sidebar-link">
-                                    Создать пост
-                                </Link>
-                            </>
-                        )}
-                    </nav>
-                </div>
+                <header className="bg-primary text-primary-foreground shadow-md">
+                    <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+                        <h2 className="text-2xl font-bold m-0">Blog</h2>
+                        <div className="flex items-center gap-4">
+                            {auth.user ? (
+                                <>
+                                    <span className="text-sm">Привет, {auth.user.name}!</span>
+                                    <InertiaLink 
+                                        href="/logout" 
+                                        method="post" 
+                                        as="button"
+                                        className="cursor-pointer bg-white/10 hover:bg-white/20 px-4 py-2 rounded-md transition-colors"
+                                    >
+                                        Выйти
+                                    </InertiaLink>
+                                </>
+                            ) : (
+                                <>
+                                    <Link href="/login" className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-md transition-colors">
+                                        Войти
+                                    </Link>
+                                    <Link href="/register" className="bg-white text-primary hover:bg-white/90 px-4 py-2 rounded-md transition-colors font-medium">
+                                        Регистрация
+                                    </Link>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </header>
 
-                <div className="main-content">
-                    {children}
+                <div className="flex flex-1">
+                    <aside className="w-64 bg-card border-r border-border">
+                        <nav className="p-4 space-y-2">
+                            <Link 
+                                href="/" 
+                                className="block px-4 py-2 rounded-md text-foreground hover:bg-accent hover:text-accent-foreground transition-colors no-underline"
+                            >
+                                Все посты
+                            </Link>
+                            
+                            {auth.user && (
+                                <>
+                                    <Link 
+                                        href="/my-posts" 
+                                        className="block px-4 py-2 rounded-md text-foreground hover:bg-accent hover:text-accent-foreground transition-colors no-underline"
+                                    >
+                                        Мои посты
+                                    </Link>
+                                    <Link 
+                                        href="/posts/create" 
+                                        className="block px-4 py-2 rounded-md text-foreground hover:bg-accent hover:text-accent-foreground transition-colors no-underline"
+                                    >
+                                        Создать пост
+                                    </Link>
+                                </>
+                            )}
+                        </nav>
+                    </aside>
+
+                    <main className="flex-1 overflow-auto">
+                        {children}
+                    </main>
                 </div>
+                
+                <footer className="bg-muted border-t border-border py-4">
+                    <div className="container mx-auto px-6 text-center">
+                        <p className="m-0 text-sm text-muted-foreground">© 2025 Blog</p>
+                    </div>
+                </footer>
             </div>
-            
-            <div className="footer">
-                <div className="container text-center">
-                    <p className="mb-0 text-muted">© 2025 Blog</p>
-                </div>
-            </div>
-        </div>
     );
 }
 export default DefaultLayout;

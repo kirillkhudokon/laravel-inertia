@@ -16,8 +16,10 @@ class PostFilterRequest extends FormRequest
         return [
             'search' => ['nullable', 'string', 'max:255'],
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
-            'created_at' => ['nullable', 'date'],
-            'updated_at' => ['nullable', 'date'],
+            'created_from' => ['nullable', 'date'],
+            'created_to' => ['nullable', 'date', 'after_or_equal:created_from'],
+            'updated_from' => ['nullable', 'date'],
+            'updated_to' => ['nullable', 'date', 'after_or_equal:updated_from'],
             'sort_by' => ['nullable', 'string', 'in:created_at,updated_at'],
             'sort_order' => ['nullable', 'string', 'in:asc,desc'],
         ];

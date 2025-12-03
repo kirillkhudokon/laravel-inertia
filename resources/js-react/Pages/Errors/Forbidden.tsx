@@ -1,7 +1,10 @@
 import DefaultLayout from '../../Layouts/DefaultLayout';
-import { Link } from '../../Components';
+import { useUIComponents } from '@/contexts/UIContext';
 
 export default function Forbidden() {
+    const components = useUIComponents();
+    const { Link } = components;
+    
     return (
         <DefaultLayout>
             <div className="section-content">

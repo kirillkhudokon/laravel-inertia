@@ -1,9 +1,13 @@
-import { useForm } from '@inertiajs/react';
+import { useForm, router, usePage } from '@inertiajs/react';
 import DefaultLayout from '../../Layouts/DefaultLayout';
-import { Button, Link, Input, TextArea, TagInput } from '../../Components';
-import { FormEventHandler } from 'react';
+import { FormEventHandler, useMemo } from 'react';
+import { useUIComponents } from '@/contexts/UIContext';
+import { PageProps } from '@/types';
 
 export default function Create() {
+    const components = useUIComponents();
+    const { tagSuggestions } = usePage<PageProps>().props;
+    
     const { data, setData, post, processing, errors } = useForm<{
         title: string;
         content: string;
@@ -19,18 +23,33 @@ export default function Create() {
         post('/posts');
     };
 
+    const onSearch = (term: string) => {
+        router.get('/api/tags/search', { term }, {
+            only: ['tagSuggestions'],
+            preserveState: true,
+            replace: true,
+            preserveUrl: true
+        });
+    }
+
+    const { Button, Link, Input, TextArea, TagInput } = components;
+
+    const suggestions = useMemo(() => {
+        return tagSuggestions?.map(tag => ({ id: tag.id!, name: tag.name }) ) || []
+    }, [tagSuggestions])
+
     return (
         <DefaultLayout>
-            <div className="content container-small">
-                <div className="mb-4">
-                    <Link href="/">
-                       Назад к постам
+            <div className="container mx-auto px-6 py-8 max-w-4xl">
+                <div className="mb-6">
+                    <Link href="/" className="text-primary hover:underline">
+                        ← Назад к постам
                     </Link>
                 </div>
 
-                <h1>Создать новый пост</h1>
+                <h1 className="text-3xl font-bold mb-6">Создать новый пост</h1>
 
-                <form onSubmit={handleSubmit} className="mt-4">
+                <form onSubmit={handleSubmit} className="space-y-6 bg-card border border-border rounded-lg p-6">
                     <Input
                         id="title"
                         label="Заголовок"
@@ -52,21 +71,23 @@ export default function Create() {
                         required
                     />
 
-                    <div className="form-group">
-                        <label className="form-label">Теги</label>
+                    <div className="space-y-2">
+                        <label className="block text-sm font-medium">Теги</label>
                         <TagInput
                             tags={data.tags}
-                            onChange={(tags) => setData('tags', tags)}
+                            onChange={(tags: string[]) => setData('tags', tags)}
                             placeholder="Добавьте теги (например: #programming, #react)..."
+                            onSearch={onSearch}
+                            suggestions={suggestions}
                         />
                         {errors.tags && (
-                            <div className="error-message">
+                            <div className="text-sm text-destructive mt-1">
                                 {errors.tags}
                             </div>
                         )}
                     </div>
 
-                    <div className="form-actions">
+                    <div className="flex gap-3 pt-4">
                         <Button
                             type="submit"
                             variant="primary"
