@@ -1,22 +1,63 @@
-import { useForm } from '@inertiajs/react';
+import { useForm, router } from '@inertiajs/react';
 import DefaultLayout from '../../Layouts/DefaultLayout';
-import { FormEventHandler } from 'react';
+import { FormEventHandler, useState } from 'react';
 import { useUIComponents } from '@/contexts/UIContext';
+
+interface FormData {
+    name: string;
+    email: string;
+    password: string;
+    password_confirmation: string;
+    image: File | null;
+}
 
 export default function Register() {
     const components = useUIComponents();
-    const { Input, Button, Card } = components;
+    const { Input, Button, Card, ImageUpload } = components;
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
     
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, processing, errors } = useForm<FormData>({
         name: '',
         email: '',
         password: '',
         password_confirmation: '',
+        image: null,
     });
 
     const submit: FormEventHandler<HTMLFormElement> = (e) => {
         e.preventDefault();
-        post('/register');
+        
+        const formData = new FormData();
+        formData.append('name', data.name);
+        formData.append('email', data.email);
+        formData.append('password', data.password);
+        formData.append('password_confirmation', data.password_confirmation);
+        
+        if (imageFile) {
+            formData.append('image', imageFile);
+        }
+        
+        router.post('/register', formData);
+    };
+    
+    const handleImageChange = (file: File | null) => {
+        setImageFile(file);
+        
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            setImagePreview(null);
+        }
+    };
+    
+    const handleImageDelete = () => {
+        setImageFile(null);
+        setImagePreview(null);
     };
 
     return (
@@ -69,6 +110,18 @@ export default function Register() {
                                             value={data.password_confirmation}
                                             onChange={(e) => setData('password_confirmation', e.target.value)}
                                             required
+                                        />
+                                    </div>
+                                    
+                                    <div className="mb-4">
+                                        <ImageUpload
+                                            value={imagePreview}
+                                            onChange={handleImageChange}
+                                            onDelete={handleImageDelete}
+                                            label="Аватар (необязательно)"
+                                            error={errors.image}
+                                            disabled={processing}
+                                            maxSize={5}
                                         />
                                     </div>
                                     

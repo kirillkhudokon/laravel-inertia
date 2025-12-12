@@ -30,4 +30,8 @@ export type UserData = {
     email: string;
     created_at: string | null;
     updated_at: string | null;
+    image?: {
+        id: number;
+        url: string;
+    } | null;
 };

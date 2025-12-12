@@ -11,6 +11,7 @@ type TagInputComponent = typeof import('ui/TagInput').TagInput;
 type DateRangePickerComponent = typeof import('ui/DateRangePicker').DateRangePicker;
 type DateRangeFilterComponent = typeof import('ui/DateRangeFilter').DateRangeFilter;
 type PostFiltersComponent = typeof import('ui/PostFilters').default;
+type ImageUploadComponent = typeof import('ui/ImageUpload').default;
 
 type ShadcnButtonComponent = typeof import('ui/ui/button').Button;
 type ShadcnInputComponent = typeof import('ui/ui/input').Input;
@@ -38,6 +39,7 @@ interface UIComponents {
   DateRangePicker: DateRangePickerComponent;
   DateRangeFilter: DateRangeFilterComponent;
   PostFilters: PostFiltersComponent;
+  ImageUpload: ImageUploadComponent;
 
   ShadcnButton: ShadcnButtonComponent;
   ShadcnInput: ShadcnInputComponent;
@@ -93,6 +95,7 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
           dateRangePickerModule,
           dateRangeFilterModule,
           postFiltersModule,
+          imageUploadModule,
 
           shadcnButtonModule,
           shadcnInputModule,
@@ -116,6 +119,7 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
           import('ui/DateRangePicker'),
           import('ui/DateRangeFilter'),
           import('ui/PostFilters'),
+          import('ui/ImageUpload'),
 
           import('ui/ui/button'),
           import('ui/ui/input'),
@@ -141,6 +145,7 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
           DateRangePicker: dateRangePickerModule.DateRangePicker,
           DateRangeFilter: dateRangeFilterModule.DateRangeFilter,
           PostFilters: postFiltersModule.default,
+          ImageUpload: imageUploadModule.default,
           ShadcnButton: shadcnButtonModule.Button,
           ShadcnInput: shadcnInputModule.Input,
           Calendar: calendarModule.Calendar,

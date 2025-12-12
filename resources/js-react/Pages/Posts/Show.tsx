@@ -5,7 +5,7 @@ import { FC, PropsWithChildren } from 'react';
 import { useUIComponents } from '@/contexts/UIContext';
 
 interface ShowProps {
-    post: Post
+    post: Post & { image?: { id: number; url: string } | null };
 }
 
 const Show: FC<PropsWithChildren<ShowProps>> = ({ post }) => {
@@ -47,6 +47,16 @@ const Show: FC<PropsWithChildren<ShowProps>> = ({ post }) => {
                             )}
                         </div>
                     </header>
+
+                    {post.image && (
+                        <div className="mb-8">
+                            <img 
+                                src={post.image.url} 
+                                alt={post.title}
+                                className="w-full max-h-[500px] object-cover rounded-lg shadow-md"
+                            />
+                        </div>
+                    )}
 
                     <div className="prose prose-slate max-w-none mb-6">
                         {post.content.split('\n').map((paragraph, index) => (

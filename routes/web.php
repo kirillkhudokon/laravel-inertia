@@ -3,6 +3,7 @@
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TagController;
+use App\Http\Controllers\ImageController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PostController::class, 'index'])->name('home');
@@ -25,6 +26,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('/posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
 
     Route::get('/api/tags/search', [TagController::class, 'search'])->name('tags.search');
+        
+    Route::post('/api/images/upload', [ImageController::class, 'upload'])->name('images.upload');
+    Route::delete('/api/images/{modelType}/{modelId}', [ImageController::class, 'delete'])->name('images.delete');
 });
 
 Route::get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');

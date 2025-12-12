@@ -49,8 +49,17 @@ const Index: FC<PropsWithChildren<IndexProps>> = ({ posts, users, filters }) => 
                 ) : (
                     <>
                         <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 mb-6">
-                            {posts.data.map((post: Post) => (
+                            {posts.data.map((post: Post & { image?: { url: string } | null }) => (
                                 <Card key={post.id}>
+                                    {post.image && (
+                                        <div className="mb-4 -mt-6 -mx-6">
+                                            <img 
+                                                src={post.image.url} 
+                                                alt={post.title}
+                                                className="w-full h-48 object-cover rounded-t-lg"
+                                            />
+                                        </div>
+                                    )}
                                     <div className="flex items-start justify-between">
                                         <div className="flex-1">
                                             <h3 className="text-xl font-semibold mb-2">

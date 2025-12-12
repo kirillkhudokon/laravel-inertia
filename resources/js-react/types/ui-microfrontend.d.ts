@@ -248,3 +248,22 @@ declare module 'ui/utils' {
   import { ClassValue } from 'clsx';
   export function cn(...inputs: ClassValue[]): string;
 }
+
+declare module 'ui/ImageUpload' {
+  import { FC } from 'react';
+  
+  interface ImageUploadProps {
+    value?: string | null;
+    onChange: (file: File | null) => void;
+    onDelete?: () => void;
+    label?: string;
+    error?: string;
+    maxSize?: number;
+    accept?: string;
+    disabled?: boolean;
+    className?: string;
+  }
+  
+  const ImageUpload: FC<ImageUploadProps>;
+  export default ImageUpload;
+}
