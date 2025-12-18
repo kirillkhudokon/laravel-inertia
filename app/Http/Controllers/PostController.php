@@ -23,7 +23,7 @@ class PostController extends Controller
      */
     public function index(PostFilterRequest $request)
     {
-        $query = Post::with(['user', 'tags']);
+        $query = Post::with(['user', 'tags', 'image']);
 
         if ($request->filled('search')) {
             $query->where('title', 'LIKE', '%' . $request->search . '%');
@@ -79,7 +79,7 @@ class PostController extends Controller
         $tag = Tag::where('slug', $tagSlug)->firstOrFail();
         $posts = Post::whereHas('tags', function ($query) use ($tag) {
             $query->where('tags.id', $tag->id);
-        })->with(['user', 'tags'])->latest()->paginate(10);
+        })->with(['user', 'tags', 'image'])->latest()->paginate(10);
         
         return Inertia::render('Posts/ByTag', [
             'posts' => $posts,
@@ -93,7 +93,7 @@ class PostController extends Controller
     public function myPosts()
     {
         $posts = Post::where('user_id', Auth::id())
-            ->with(['user', 'tags'])
+            ->with(['user', 'tags', 'image'])
             ->latest()
             ->paginate(10);
         
@@ -128,6 +128,10 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
+        $request->validate([
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+        ]);
+
         $postData = CreatePostData::validateAndCreate($request->all());
 
         $url = Str::slug($postData->title);
@@ -145,6 +149,10 @@ class PostController extends Controller
             $post->syncTags($postData->tags);
         }
 
+        if ($request->hasFile('image')) {
+            $post->uploadImage($request->file('image'));
+        }
+
         return redirect()->route('home')
             ->with('success', 'Пост успешно создан!');
     }
@@ -154,7 +162,7 @@ class PostController extends Controller
      */
     public function show(Post $post)
     {
-        $post->load(['user', 'tags']);
+        $post->load(['user', 'tags', 'image']);
         
         return Inertia::render('Posts/Show', [
             'post' => $post
@@ -170,7 +178,7 @@ class PostController extends Controller
             return Inertia::render('Errors/Forbidden');
         }
         
-        $post->load('tags');
+        $post->load(['tags', 'image']);
         
         $tagQuery = $request->get('tagQuery', '');
         $suggestions = [];
@@ -212,7 +220,24 @@ class PostController extends Controller
         ]);
 
         if ($postData->tags !== null) {
-            $post->syncTags($postData->tags);
+            $filteredTags = array_filter($postData->tags, fn($tag) => !empty(trim($tag)));
+            $post->syncTags($filteredTags);
+        } else {
+            $post->syncTags([]);
+        }
+
+        if ($request->has('delete_image') && $request->input('delete_image') === 'true') {
+            $post->deleteImage();
+        } elseif ($request->hasFile('image')) {
+            $request->validate([
+                'image' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            ]);
+            
+            if ($post->image) {
+                $post->deleteImage();
+            }
+            
+            $post->uploadImage($request->file('image'));
         }
 
         return redirect()->route('home')

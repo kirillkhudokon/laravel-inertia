@@ -18,7 +18,20 @@ const DefaultLayout: FC<PropsWithChildren> = ({ children }) => {
                         <div className="flex items-center gap-4">
                             {auth.user ? (
                                 <>
-                                    <span className="text-sm">Привет, {auth.user.name}!</span>
+                                    <div className="flex items-center gap-3">
+                                        {auth.user.image ? (
+                                            <img 
+                                                src={auth.user.image.url} 
+                                                alt={auth.user.name}
+                                                className="w-10 h-10 rounded-full object-cover border-2 border-white/20"
+                                            />
+                                        ) : (
+                                            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold">
+                                                {auth.user.name.charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+                                        <span className="text-sm">Привет, {auth.user.name}!</span>
+                                    </div>
                                     <InertiaLink 
                                         href="/logout" 
                                         method="post" 

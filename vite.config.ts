@@ -16,6 +16,7 @@ export default defineConfig(({ isSsrBuild }) => ({
             name: 'host_app',
             remotes: {
                 ui: 'https://d2yeshvqijproh.cloudfront.net/assets/remoteEntry.js',
+                //ui: 'http://localhost:5000/assets/remoteEntry.js', 
             },
             exposes: {},
             shared: {

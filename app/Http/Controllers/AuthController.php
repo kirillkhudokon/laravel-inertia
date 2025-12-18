@@ -44,6 +44,7 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
         ]);
 
         $user = User::create([
@@ -51,6 +52,10 @@ class AuthController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
+        
+        if ($request->hasFile('image')) {
+            $user->uploadImage($request->file('image'));
+        }
 
         Auth::login($user);
 

@@ -1,12 +1,15 @@
 import { useForm, router, usePage } from '@inertiajs/react';
 import DefaultLayout from '../../Layouts/DefaultLayout';
-import { FormEventHandler, useMemo } from 'react';
+import { FormEventHandler, useMemo, useState } from 'react';
 import { useUIComponents } from '@/contexts/UIContext';
 import { PageProps } from '@/types';
 
 export default function Create() {
     const components = useUIComponents();
     const { tagSuggestions } = usePage<PageProps>().props;
+    
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imageError, setImageError] = useState<string | null>(null);
     
     const { data, setData, post, processing, errors } = useForm<{
         title: string;
@@ -20,7 +23,23 @@ export default function Create() {
 
     const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
         e.preventDefault();
-        post('/posts');
+        
+        if (imageFile) {
+            const formData = new FormData();
+            formData.append('title', data.title);
+            formData.append('content', data.content);
+            data.tags.forEach(tag => formData.append('tags[]', tag));
+            formData.append('image', imageFile);
+            
+            router.post('/posts', formData, {
+                preserveState: false,
+                onError: (errors) => {
+                    console.error('Failed to create post:', errors);
+                }
+            });
+        } else {
+            post('/posts');
+        }
     };
 
     const onSearch = (term: string) => {
@@ -32,7 +51,7 @@ export default function Create() {
         });
     }
 
-    const { Button, Link, Input, TextArea, TagInput } = components;
+    const { Button, Link, Input, TextArea, TagInput, ImageUpload } = components;
 
     const suggestions = useMemo(() => {
         return tagSuggestions?.map(tag => ({ id: tag.id!, name: tag.name }) ) || []
@@ -86,6 +105,18 @@ export default function Create() {
                             </div>
                         )}
                     </div>
+
+                    <ImageUpload
+                        value={null}
+                        onChange={(file) => {
+                            setImageFile(file);
+                            setImageError(null);
+                        }}
+                        label="Изображение поста"
+                        error={imageError || undefined}
+                        disabled={processing}
+                        maxSize={5}
+                    />
 
                     <div className="flex gap-3 pt-4">
                         <Button

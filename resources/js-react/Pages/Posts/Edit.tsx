@@ -1,29 +1,85 @@
 import { useForm, router, usePage } from '@inertiajs/react';
 import DefaultLayout from '../../Layouts/DefaultLayout';
-import { FC, FormEventHandler, PropsWithChildren, useMemo } from 'react';
+import { FC, FormEventHandler, PropsWithChildren, useMemo, useState } from 'react';
 import { Post, PageProps } from '@/types';
 import { useUIComponents } from '@/contexts/UIContext';
 
 interface EditProps {
-    post: Post 
+    post: Post & { image?: { id: number; url: string } | null };
+}
+
+interface FormData { 
+    title: string
+    content: string
+    tags: string[]
+    image: File | null
+    delete_image: string
 }
 
 const Edit: FC<PropsWithChildren<EditProps>> = ({ post }) => {
     const components = useUIComponents();
     const { tagSuggestions } = usePage<PageProps>().props;
-    const { Button, Link, Input, TextArea, TagInput } = components;
+    const { Button, Link, Input, TextArea, TagInput, ImageUpload } = components;
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(post.image?.url || null);
+    const [shouldDeleteImage, setShouldDeleteImage] = useState(false);
     
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, processing, errors } = useForm<FormData>({
         title: post.title,
         content: post.content,
         tags: post.tags?.map(tag => tag.name) || [],
+        image: null,
+        delete_image: 'false',
     });
 
     const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
         e.preventDefault();
-        put(`/posts/${post.url}`);
+        
+        const formData = new FormData();
+        formData.append('title', data.title);
+        formData.append('content', data.content);
+        
+        if (data.tags.length > 0) {
+            data.tags.forEach(tag => {
+                formData.append('tags[]', tag);
+            });
+        }
+        
+        if (imageFile) {
+            formData.append('image', imageFile);
+        }
+        
+        if (shouldDeleteImage) {
+            formData.append('delete_image', 'true');
+        }
+        
+        formData.append('_method', 'PUT');
+        
+        router.post(`/posts/${post.url}`, formData, {
+            preserveState: false,
+        });
+    };
+    
+    const handleImageChange = (file: File | null) => {
+        setImageFile(file);
+        setShouldDeleteImage(false);
+        
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+    
+    const handleImageDelete = () => {
+        setImageFile(null);
+        setImagePreview(null);
+        setShouldDeleteImage(true);
     };
 
+    
     const onSearch = (term: string) => {
         router.get('/api/tags/search', { term }, {
             only: ['tagSuggestions'],
@@ -85,6 +141,16 @@ const Edit: FC<PropsWithChildren<EditProps>> = ({ post }) => {
                             </div>
                         )}
                     </div>
+
+                    <ImageUpload
+                        value={imagePreview}
+                        onChange={handleImageChange}
+                        onDelete={handleImageDelete}
+                        label="Изображение поста"
+                        error={errors.image}
+                        disabled={processing}
+                        maxSize={5}
+                    />
 
                     <div className="flex gap-3 pt-4">
                         <Button

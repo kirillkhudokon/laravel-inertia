@@ -14,5 +14,6 @@ class UserData extends Data
         public string $email,
         public ?string $created_at = null,
         public ?string $updated_at = null,
+        public ?array $image = null,
     ) {}
 }
