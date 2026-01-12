@@ -1,6 +1,6 @@
 import { usePage, Link as InertiaLink, router } from '@inertiajs/react';
 import DefaultLayout from '../../Layouts/DefaultLayout';
-import { FC, PropsWithChildren } from 'react';
+import { FC, PropsWithChildren, useState, useEffect, useRef } from 'react';
 import { PageProps, Post, User, PostFiltersData } from '@/types';
 import { useUIComponents } from '@/contexts/UIContext';
 
@@ -12,15 +12,66 @@ interface IndexProps {
     filters: PostFiltersData;
 }
 
-const Index: FC<PropsWithChildren<IndexProps>> = ({ posts, users, filters }) => {
+const Index: FC<PropsWithChildren<IndexProps>> = ({ posts: initialPosts, users, filters }) => {
     const { flash, auth } = usePage<PageProps>().props;
     const components = useUIComponents();
+    const [posts, setPosts] = useState(initialPosts);
+    const [isLoading, setIsLoading] = useState(false);
+    const observerTarget = useRef<HTMLDivElement>(null);
     
     const handleFiltersChange = (filters: Record<string, any>) => {
-        router.get('/', filters, { preserveState: true });
+        router.get('/', filters, { 
+            preserveState: true,
+            onSuccess: (page: any) => {
+                setPosts(page.props.posts);
+            }
+        });
     };
 
-    const { Button, Link, Alert, Card, Pagination, PostFilters } = components;
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && posts.next_page_url && !isLoading) {
+                    loadMore();
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        if (observerTarget.current) {
+            observer.observe(observerTarget.current);
+        }
+
+        return () => {
+            if (observerTarget.current) {
+                observer.unobserve(observerTarget.current);
+            }
+        };
+    }, [posts.next_page_url, isLoading]);
+
+    const loadMore = () => {
+        if (!posts.next_page_url || isLoading) return;
+
+        setIsLoading(true);
+        
+        router.get(posts.next_page_url, {}, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['posts'],
+            onSuccess: (page: any) => {
+                setPosts((prev) => ({
+                    ...page.props.posts,
+                    data: [...prev.data, ...page.props.posts.data]
+                }));
+                setIsLoading(false);
+            },
+            onError: () => {
+                setIsLoading(false);
+            }
+        });
+    };
+
+    const { Button, Link, Alert, Card, PostFilters } = components;
 
     return (
         <DefaultLayout>
@@ -111,7 +162,18 @@ const Index: FC<PropsWithChildren<IndexProps>> = ({ posts, users, filters }) => 
                             ))}
                         </div>
                         
-                        <Pagination links={posts.links} />
+                        {posts.next_page_url && (
+                            <div 
+                                ref={observerTarget}
+                                className="flex justify-center py-8"
+                            >
+                                {isLoading && (
+                                    <div className="text-muted-foreground">
+                                        Загрузка...
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </>
                 )}
             </div>
